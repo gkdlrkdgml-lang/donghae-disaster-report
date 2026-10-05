@@ -63,6 +63,24 @@
   .jihwi .cbtn{background:#5a8fe0;color:#06162e;border:none;border-radius:6px;padding:7px 15px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
   .jihwi .cbtn.ok{background:var(--green);color:#04170c}
   .jihwi .hint{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.5}
+  /* 대응 흐름 단계 디자인 */
+  #msgTabs{display:none!important}
+  .flow{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:16px;flex-wrap:wrap}
+  .flow .fstep{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--ink)}
+  .flow .fnum{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff}
+  .flow .arrow{color:var(--dim);font-size:15px;font-weight:700}
+  .stage{border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden;background:var(--panel)}
+  .stage.s1{border-color:#e5484d55} .stage.s2{border-color:#3da9fc55} .stage.s3{border-color:#f5a62355}
+  .stage-head{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line)}
+  .stage-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+  .stage-title{font-size:14px;font-weight:800;color:var(--ink)}
+  .stage-tag{margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .s1 .stage-num{background:var(--red)} .s1 .stage-tag{background:#e5484d22;color:#ff9a9c;border:1px solid #e5484d55}
+  .s2 .stage-num{background:var(--cyan)} .s2 .stage-tag{background:#3da9fc22;color:#9fd4ff;border:1px solid #3da9fc55}
+  .s3 .stage-num{background:var(--amber)} .s3 .stage-tag{background:#f5a62322;color:#ffd48a;border:1px solid #f5a62355}
+  .stage-body{padding:14px}
+  .stage-body .cbs,.stage-body .jihwi{border:none;background:transparent;padding:0;margin:0}
+  .stage-body .cbs h4,.stage-body .jihwi h4{display:none}
   .paper{background:#fff;color:#111;border-radius:4px;padding:40px 38px;box-shadow:0 8px 30px rgba(0,0,0,.4);font-family:'Batang','바탕',serif;font-size:13.5px;line-height:1.85}
   .p-tag{font-size:10.5px;color:#666}
   .p-title{text-align:center;font-size:21px;font-weight:800;letter-spacing:.15em;margin:14px 0 4px}
@@ -130,79 +148,72 @@
     </div>
 
     <div class="col-right">
-      <div class="actions">
-        <button class="btn-sec hwp" id="hwpxFormBtn">한글 문서 저장 (.hwpx 양식)</button>
-        <button class="btn-sec" id="copyBtn">전체 복사</button>
-        <button class="btn-sec" id="printBtn">인쇄 / PDF</button>
-      </div>
-      <button class="subact" id="docBtn">hwpx가 안 열리면 → 호환 문서(.doc)로 저장</button>
-
-      <!-- 메시지 상단 탭 -->
-      <div class="msgtabs" id="msgTabs" style="display:none">
-        <button id="mtabCbs" class="on">📣 재난문자 (주민)</button>
-        <button id="mtabJihwi">📨 지휘부 안내문자</button>
+      <!-- 대응 흐름 안내 -->
+      <div class="flow">
+        <span class="fstep"><span class="fnum" style="background:var(--red)">1</span>지휘부 안내문자</span>
+        <span class="arrow">→</span>
+        <span class="fstep"><span class="fnum" style="background:var(--cyan)">2</span>재난상황 보고서</span>
+        <span class="arrow">→</span>
+        <span class="fstep"><span class="fnum" style="background:var(--amber)">3</span>시민 재난문자</span>
       </div>
 
-      <div class="cbs" id="cbsCard" style="display:none">
-        <h4>📣 재난문자 표준문안 <span style="color:var(--dim);font-weight:400">— 참고용 · 문서에는 미포함</span></h4>
-        <select id="cbsSelect"></select>
-        <div class="cbs-tabs">
-          <button id="tab90" class="on">긴급 90자</button>
-          <button id="tab157">비긴급 157자</button>
-        </div>
-        <textarea id="cbsText"></textarea>
-        <div class="row">
-          <span class="cnt" id="cbsCnt"></span>
-          <button class="cbtn" id="cbsCopy">문자 복사</button>
-        </div>
-        <div class="hint">행정안전부 표준문안 기반. ○○(지역·시각·시설명)은 신고내역에서 자동 반영됩니다. 유형에 안 맞는 시설명 치환이나 발송 여부는 직접 확인하세요.</div>
-      </div>
+      <!-- 숨김 유지(스크립트 호환) -->
+      <div class="msgtabs" id="msgTabs" style="display:none"><button id="mtabCbs"></button><button id="mtabJihwi"></button></div>
 
-      <!-- 지휘부 안내문자 -->
-      <div class="jihwi" id="jihwiCard" style="display:none">
-        <h4>📨 지휘부 안내문자 <span style="color:var(--dim);font-weight:400">— 참고용 · 문서에는 미포함</span></h4>
-        <div class="jrow">
-          <label>종류</label>
-          <button class="mini on" id="jkindIncident">상황 발생보고</button>
-          <button class="mini" id="jkindWeather">기상특보</button>
-        </div>
-
-        <!-- 상황 발생보고 입력 -->
-        <div id="jIncidentBox">
-          <div class="jrow">
-            <label>유형</label><select id="jType"></select>
-            <label style="min-width:auto">단계</label><select id="jStage"></select>
-          </div>
-          <div class="jrow"><label>일시</label><input type="text" id="jDate" style="flex:1" placeholder="01.05. 09:56"></div>
-          <div class="jrow"><label>장소</label><input type="text" id="jPlace" style="flex:1" placeholder="발한동 247-14 (○○ 앞)"></div>
-          <div class="jrow" style="align-items:flex-start"><label>상황보고</label>
-            <div style="flex:1">
-              <textarea id="jSit" style="width:100%;box-sizing:border-box;min-height:40px"></textarea>
-              <button class="mini" id="jAiBtn" style="margin-top:4px">✨ AI로 문장 다듬기</button>
+      <!-- ① 지휘부 안내문자 (1순위) -->
+      <div class="stage s1">
+        <div class="stage-head"><span class="stage-num">1</span><span class="stage-title">📨 지휘부 안내문자</span><span class="stage-tag">1순위 · 가장 먼저</span></div>
+        <div class="stage-body">
+          <div class="jihwi" id="jihwiCard">
+            <div class="jrow">
+              <label>종류</label>
+              <button class="mini on" id="jkindIncident">상황 발생보고</button>
+              <button class="mini" id="jkindWeather">기상특보</button>
             </div>
+            <div id="jIncidentBox">
+              <div class="jrow">
+                <label>유형</label><select id="jType"></select>
+                <label style="min-width:auto">단계</label><select id="jStage"></select>
+              </div>
+              <div class="jrow"><label>일시</label><input type="text" id="jDate" style="flex:1" placeholder="01.05. 09:56"></div>
+              <div class="jrow"><label>장소</label><input type="text" id="jPlace" style="flex:1" placeholder="발한동 247-14 (○○ 앞)"></div>
+              <div class="jrow" style="align-items:flex-start"><label>상황보고</label>
+                <div style="flex:1">
+                  <textarea id="jSit" style="width:100%;box-sizing:border-box;min-height:40px"></textarea>
+                  <button class="mini" id="jAiBtn" style="margin-top:4px">✨ AI로 문장 다듬기</button>
+                </div>
+              </div>
+              <div class="jrow" style="align-items:flex-start"><label>조치사항</label><textarea id="jAct" style="flex:1;min-height:40px"></textarea></div>
+              <div class="jrow" id="jEndRow" style="display:none"><label>종결일시</label><input type="text" id="jEnd" style="flex:1" placeholder="01.05. 10:10"></div>
+            </div>
+            <div id="jWeatherBox" style="display:none">
+              <div class="jrow">
+                <label>특보</label><select id="jwType"></select><select id="jwLevel"></select>
+                <label style="min-width:auto">구분</label><select id="jwMode"><option value="issue">발표</option><option value="release">해제</option></select>
+              </div>
+              <div class="jrow"><label>시각</label><input type="text" id="jwTime" style="flex:1" placeholder="01.10. 06:00"></div>
+              <div class="jrow"><label>발표구역</label><input type="text" id="jwArea" style="flex:1" placeholder="동해중부앞바다, 강원남부산지"></div>
+            </div>
+            <textarea class="out" id="jOut" placeholder="자동 생성된 문자가 여기에 표시됩니다"></textarea>
+            <div class="jrow" style="margin-top:8px;margin-bottom:0">
+              <span class="cnt" id="jCnt" style="font-size:11.5px;color:var(--dim)"></span>
+              <button class="cbtn" id="jCopy" style="margin-left:auto">문자 복사</button>
+            </div>
+            <div class="hint">1보는 메시지의 진행상황을 그대로 반영합니다. <b style="color:#f5a623">2보·3보·종결은 '예시 틀'</b>이니 실제 상황(구조 인원·피해 등)을 확인해 ○○ 빈칸을 채운 뒤 발송하세요.</div>
           </div>
-          <div class="jrow" style="align-items:flex-start"><label>조치사항</label><textarea id="jAct" style="flex:1;min-height:40px"></textarea></div>
-          <div class="jrow" id="jEndRow" style="display:none"><label>종결일시</label><input type="text" id="jEnd" style="flex:1" placeholder="01.05. 10:10"></div>
         </div>
-
-        <!-- 기상특보 입력 -->
-        <div id="jWeatherBox" style="display:none">
-          <div class="jrow">
-            <label>특보</label><select id="jwType"></select><select id="jwLevel"></select>
-            <label style="min-width:auto">구분</label><select id="jwMode"><option value="issue">발표</option><option value="release">해제</option></select>
-          </div>
-          <div class="jrow"><label>시각</label><input type="text" id="jwTime" style="flex:1" placeholder="01.10. 06:00"></div>
-          <div class="jrow"><label>발표구역</label><input type="text" id="jwArea" style="flex:1" placeholder="동해중부앞바다, 강원남부산지"></div>
-        </div>
-
-        <textarea class="out" id="jOut" placeholder="자동 생성된 문자가 여기에 표시됩니다"></textarea>
-        <div class="jrow" style="margin-top:8px;margin-bottom:0">
-          <span class="cnt" id="jCnt" style="font-size:11.5px;color:var(--dim)"></span>
-          <button class="cbtn" id="jCopy" style="margin-left:auto">문자 복사</button>
-        </div>
-        <div class="hint">1보는 메시지의 진행상황을 그대로 반영합니다. <b style="color:#f5a623">2보·3보·종결은 '예시 틀'</b>이니 실제 상황(구조 인원·피해 등)을 확인해 ○○ 빈칸을 채운 뒤 발송하세요.</div>
       </div>
 
+      <!-- ② 재난상황 보고서 (2순위) -->
+      <div class="stage s2">
+        <div class="stage-head"><span class="stage-num">2</span><span class="stage-title">📄 재난상황 보고서</span><span class="stage-tag">2순위</span></div>
+        <div class="stage-body">
+          <div class="actions">
+            <button class="btn-sec hwp" id="hwpxFormBtn">한글 문서 저장 (.hwpx 양식)</button>
+            <button class="btn-sec" id="copyBtn">전체 복사</button>
+            <button class="btn-sec" id="printBtn">인쇄 / PDF</button>
+          </div>
+          <button class="subact" id="docBtn">hwpx가 안 열리면 → 호환 문서(.doc)로 저장</button>
       <div class="paper">
         <div class="p-tag">■ 재난 및 안전관리 기본법 시행규칙 [별지 제1호서식]</div>
         <div class="p-title"><span class="tr" id="trainTag" style="display:none">[훈련] </span>재난상황 보고서</div>
@@ -246,7 +257,29 @@
         <div class="sec"><b>6. 지원 및 협조사항</b> : <input class="ff" id="f_support" style="width:60%" placeholder="확인중"></div>
         <div class="sec"><b>7. 향후 전망 및 대책</b><textarea class="fa" id="f_outlook" placeholder="추가 붕괴 대비, 복구 계획 등"></textarea></div>
       </div>
-      <div class="foot">일시·장소·유형·신고자는 메시지에서 그대로 추출합니다. 상황개요 문장만 자동 작성되며 각 칸을 눌러 수정할 수 있습니다. 사용 전 반드시 검토하세요.</div>
+          <div class="foot">일시·장소·유형·신고자는 메시지에서 그대로 추출합니다. 상황개요 문장만 자동 작성되며 각 칸을 눌러 수정할 수 있습니다. 사용 전 반드시 검토하세요.</div>
+        </div>
+      </div>
+
+      <!-- ③ 시민 재난문자 (3순위) -->
+      <div class="stage s3">
+        <div class="stage-head"><span class="stage-num">3</span><span class="stage-title">📣 시민 재난문자</span><span class="stage-tag">3순위</span></div>
+        <div class="stage-body">
+          <div class="cbs" id="cbsCard">
+            <select id="cbsSelect"></select>
+            <div class="cbs-tabs">
+              <button id="tab90" class="on">긴급 90자</button>
+              <button id="tab157">비긴급 157자</button>
+            </div>
+            <textarea id="cbsText"></textarea>
+            <div class="row">
+              <span class="cnt" id="cbsCnt"></span>
+              <button class="cbtn" id="cbsCopy">문자 복사</button>
+            </div>
+            <div class="hint">행정안전부 표준문안 기반. ○○(지역·시각·시설명)은 신고내역에서 자동 반영됩니다. 유형에 안 맞는 시설명 치환이나 발송 여부는 직접 확인하세요.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -812,13 +845,13 @@ function switchJKind(k){
   $("jWeatherBox").style.display=(k==="weather")?"block":"none";
   renderJihwi();
 }
-// 상단 탭 전환
+// 단계형 레이아웃: 세 영역이 항상 보이므로 탭 전환은 무동작
 function showMsgTab(which){
+  $("cbsCard").style.display="block";
+  $("jihwiCard").style.display="block";
+  return;
+  // (이하 과거 탭 로직 — 실행되지 않음)
   const cbs=which==="cbs";
-  $("mtabCbs").classList.toggle("on",cbs);
-  $("mtabJihwi").classList.toggle("on",!cbs);
-  $("cbsCard").style.display=cbs?"block":"none";
-  $("jihwiCard").style.display=cbs?"none":"block";
 }
 // 신고내역 설명 문구 → 보고서체 상황보고로 정리 (규칙 기반)
 function cleanSit(detail, jt){

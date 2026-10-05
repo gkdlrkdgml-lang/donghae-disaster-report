@@ -149,7 +149,17 @@
         </table>
         <div class="rule"></div>
         <div class="sec"><b>1. 일시</b> : <input class="ff" id="f_ilsi" style="width:70%" placeholder="____. __. __.(요일) __:__"></div>
-        <div class="sec"><b>2. 장소</b> : <input class="ff" id="f_jangso" style="width:70%" placeholder="동해시 ○○동"></div>
+        <div class="sec"><b>2. 장소</b> : <input class="ff" id="f_jangso" style="width:62%" placeholder="동해시 ○○동">
+          <button id="placeSearchBtn" style="margin-left:6px;background:#eef4ff;border:1px solid #9bc0ff;color:#1a56c4;border-radius:5px;padding:2px 10px;font-size:12px;cursor:pointer;font-family:inherit;vertical-align:baseline">🔍 장소 검색</button>
+          <div id="placeSearchBox" style="display:none;margin-top:6px;border:1px solid #cdd7e3;border-radius:6px;padding:8px;background:#f8fafd">
+            <div style="display:flex;gap:6px">
+              <input id="placeQuery" placeholder="시설·건물명 또는 주소 (예: 쌍용양회, 효자로 246)" style="flex:1;border:1px solid #cdd7e3;border-radius:5px;padding:6px 8px;font-size:12.5px;font-family:inherit;outline:none">
+              <button id="placeGoBtn" style="background:#1a56c4;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit">검색</button>
+            </div>
+            <div id="placeResults" style="margin-top:6px;max-height:190px;overflow-y:auto"></div>
+            <div id="placeMsg" style="font-size:11px;color:#8794a6;margin-top:4px"></div>
+          </div>
+        </div>
         <div class="sec"><b>3. 상황 개요</b><textarea class="fa" id="f_gaeyo" placeholder="발생 경위와 현재 상황"></textarea>
           <div class="reporter" id="reporterLine" style="display:none"></div></div>
         <div class="sec"><b>4. 피해상황</b>
@@ -173,10 +183,23 @@
     </div>
   </div>
 
+<script src="data/config.js"></script>
 <script src="data/disaster-types.js"></script>
 <script src="data/locations.js"></script>
 <script src="data/gaeyo-templates.js"></script>
 <script src="data/cbs-templates.js"></script>
+<script>
+// ── 카카오 지도 SDK 로드 (키가 있을 때만, services 라이브러리 포함) ──
+(function loadKakao(){
+  var key=window.KAKAO_JS_KEY||"";
+  if(!key || key.indexOf("여기에")>=0){ window.__kakaoReady=false; return; }
+  var s=document.createElement("script");
+  s.src="https://dapi.kakao.com/v2/maps/sdk.js?appkey="+key+"&libraries=services&autoload=false";
+  s.onload=function(){ if(window.kakao&&kakao.maps) kakao.maps.load(function(){ window.__kakaoReady=true; }); };
+  s.onerror=function(){ window.__kakaoReady=false; };
+  document.head.appendChild(s);
+})();
+</script>
 <script>
 const $=(id)=>document.getElementById(id);
 const DAYS=["일","월","화","수","목","금","토"];
@@ -521,6 +544,75 @@ async function aiCompose(R,ilsi,jangso,dtype){
 
 async function copyReport(){try{await navigator.clipboard.writeText(reportText());const b=$("copyBtn");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="전체 복사";b.classList.remove("ok");},1600);}catch(e){showMsg("복사 실패","err");}}
 
+// ── 카카오 장소 검색 ──
+function toggleSearch(){
+  const box=$("placeSearchBox");
+  const show=box.style.display==="none";
+  box.style.display=show?"block":"none";
+  if(show){ $("placeQuery").focus(); }
+}
+function doPlaceSearch(){
+  const q=$("placeQuery").value.trim();
+  const res=$("placeResults"), msg=$("placeMsg");
+  res.innerHTML=""; msg.textContent="";
+  if(!q){ msg.textContent="검색어를 입력하세요."; return; }
+  if(!window.__kakaoReady || !window.kakao || !kakao.maps || !kakao.maps.services){
+    msg.textContent="지도 검색을 사용할 수 없습니다. (인터넷 연결 또는 API 키·도메인 설정을 확인하세요)";
+    return;
+  }
+  msg.textContent="검색 중...";
+  const ps=new kakao.maps.services.Places();
+  // 동해시로 한정하기 위해 질의에 '동해시'를 덧붙여 검색
+  const query=/동해/.test(q)?q:("동해시 "+q);
+  ps.keywordSearch(query, function(data, status){
+    res.innerHTML="";
+    if(status!==kakao.maps.services.Status.OK || !data.length){
+      msg.textContent="검색 결과가 없습니다. 다른 이름이나 주소로 시도해 보세요.";
+      return;
+    }
+    // 동해시 결과 우선
+    const filtered=data.filter(p=>/동해시/.test((p.road_address_name||"")+(p.address_name||"")));
+    const list=(filtered.length?filtered:data).slice(0,8);
+    msg.textContent=list.length+"건";
+    list.forEach(p=>{
+      const road=p.road_address_name||"";
+      const jibun=p.address_name||"";
+      const addr=road||jibun;
+      // 보고서 장소 표기: "도로명주소 (시설명)"
+      const display=addr?(addr+" ("+p.place_name+")"):p.place_name;
+      const row=document.createElement("div");
+      row.style.cssText="padding:7px 8px;border-bottom:1px solid #e6ecf3;cursor:pointer";
+      row.onmouseover=()=>row.style.background="#eaf1ff";
+      row.onmouseout=()=>row.style.background="";
+      row.innerHTML='<div style="font-size:13px;font-weight:600;color:#1a2a3a">'+p.place_name+'</div>'
+                   +'<div style="font-size:11.5px;color:#7a8ba0">'+(road||jibun)+(jibun&&road?(' · '+jibun):'')+'</div>';
+      row.onclick=()=>applySearchedPlace(p, display);
+      res.appendChild(row);
+    });
+  });
+}
+function applySearchedPlace(p, display){
+  // 사고장소 칸에 실제 주소 반영
+  $("f_jangso").value=display;
+  // 동(법정동) 추출
+  const am=(p.address_name||p.road_address_name||"");
+  const dongM=am.match(/동해시\s*([가-힣]+동)/);
+  const dong=dongM?dongM[1]:"";
+  // 훈련 모드면 상황개요·제목·재난문자도 이 장소로 갱신
+  if(trainState){
+    const S=trainState;
+    const placeForGaeyo=(dong?("동해시 "+dong+" "):"동해시 ")+p.place_name;
+    $("f_gaeyo").value=buildGaeyo(S.type, S.time||"○○:○○", placeForGaeyo);
+    $("f_title").value=makeTitle(S.bo, true, display, S.type);
+    $("trainLocText").textContent=display;
+    cbsRegion=dong?("동해시 "+dong):"동해시"; cbsFacility=p.place_name;
+    renderCBS();
+  }
+  // 검색창 닫기
+  $("placeSearchBox").style.display="none";
+  $("placeResults").innerHTML=""; $("placeMsg").textContent="";
+}
+
 // 이벤트
 $("training").addEventListener("change",e=>setTraining(e.target.checked));
 $("su").addEventListener("input",e=>$("f_su").value=e.target.value);
@@ -537,6 +629,9 @@ $("cbsText").addEventListener("input",updateCbsCnt);
 $("tab90").addEventListener("click",()=>{cbsLen=90;$("tab90").classList.add("on");$("tab157").classList.remove("on");renderCBS();});
 $("tab157").addEventListener("click",()=>{cbsLen=157;$("tab157").classList.add("on");$("tab90").classList.remove("on");renderCBS();});
 $("cbsCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("cbsText").value);const b=$("cbsCopy");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="문자 복사";b.classList.remove("ok");},1600);}catch(e){showMsg("재난문자 복사 실패","err");}});
+$("placeSearchBtn").addEventListener("click",toggleSearch);
+$("placeGoBtn").addEventListener("click",doPlaceSearch);
+$("placeQuery").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doPlaceSearch();}});
 initCbsSelect();
 </script>
 </body>

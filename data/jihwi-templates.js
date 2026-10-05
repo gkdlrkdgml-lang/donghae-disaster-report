@@ -7,11 +7,11 @@
 window.JIHWI_TAIL = "[동해시재난안전상황실]";
 
 // 재난영상 송출 안내 (중요재난 시 지휘부에 Xprotect 영상 확인 요청)
+//  '/' 기준으로 줄이 나뉩니다. {tail}은 자동으로 끝줄에 들어갑니다.
 window.JIHWI_VIDEO = {
-  // 여러 문안 중 선택 (드롭다운)
   templates: [
-    "■ 지휘부 재난영상 송출 알림 지휘부는 Xprotectⓡ Mobile앱 실행하여 재난영상 확인 바랍니다. {tail}",
-    "동해시 재난영상이 스마트폰 Xprotectⓡ Mobile앱으로 전송되었습니다. 영상 확인 바랍니다. {tail}",
+    "■ 지휘부 재난영상 송출 알림/ 지휘부는 Xprotectⓡ Mobile앱 실행하여 재난영상 확인 바랍니다./ {tail}",
+    "동해시 재난영상이 스마트폰 Xprotectⓡ Mobile앱으로 전송되었습니다./ 영상 확인 바랍니다./ {tail}",
   ],
 };
 

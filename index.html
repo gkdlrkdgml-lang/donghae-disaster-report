@@ -131,7 +131,7 @@
 
     <div class="col-right">
       <div class="actions">
-        <button class="btn-sec hwp" id="hwpxBtn">한글 문서 저장 (.hwpx)</button>
+        <button class="btn-sec hwp" id="hwpxFormBtn">한글 문서 저장 (.hwpx 양식)</button>
         <button class="btn-sec" id="copyBtn">전체 복사</button>
         <button class="btn-sec" id="printBtn">인쇄 / PDF</button>
       </div>
@@ -254,7 +254,7 @@
 // 데이터 파일을 매번 최신으로 로드 (브라우저 캐시 방지 — 새로고침만 해도 반영됨)
 (function(){
   var v=Date.now();
-  var files=["config","disaster-types","locations","gaeyo-templates","cbs-templates","jihwi-templates"];
+  var files=["config","disaster-types","locations","gaeyo-templates","cbs-templates","jihwi-templates","hwpx-template"];
   files.forEach(function(f){ document.write('<scr'+'ipt src="data/'+f+'.js?t='+v+'"><\/scr'+'ipt>'); });
 })();
 </script>
@@ -505,29 +505,86 @@ function stamp(){const d=new Date(),p=(n)=>String(n).padStart(2,"0");return `${d
 function saveBlob(blob,fname){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);}
 function downloadHwpx(){saveBlob(buildHwpx(),`재난상황보고서_${stamp()}.hwpx`);}
 
+// ── 양식 템플릿(.hwpx) 채워서 저장 ──
+function b64ToU8(b64){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+function fillHwpxSection(text){
+  const g=(id,d="")=>{const v=$(id).value.trim();return v||d;};
+  const gap=(id)=>{const v=$(id).value.trim();return v||"  ";};
+  const tr=$("training").checked;
+  const map={
+    "★훈련표시★":tr?"[훈련] ":"", "★훈련상황★":"", "★제목앞★":"",
+    "★제목★":g("f_title"), "★보고번호★":g("f_reportNo","1"),
+    "★수신★":g("f_su"), "★시행일시★":g("f_sihaeng"), "★접수일시★":g("f_jeopsu"),
+    "★작성자★":g("f_author"), "★연락처★":"(033-530-2119)",
+    "★일시★":g("f_ilsi"), "★장소★":g("f_jangso"), "★상황개요★":g("f_gaeyo","확인중"),
+    "★인원계★":gap("f_in_tot"), "★사망★":gap("f_in_dead"), "★실종★":gap("f_in_miss"), "★부상★":gap("f_in_hurt"),
+    "★재산피해★":g("f_property","확인중"), "★기타피해★":g("f_other","확인중"),
+    "★조치사항★":g("f_action","확인중"),
+    "★인력계★":gap("f_m_tot"), "★민간인★":gap("f_m_civ"), "★군인★":gap("f_m_army"),
+    "★경찰★":gap("f_m_police"), "★소방★":gap("f_m_fire"), "★공무원★":gap("f_m_gov"),
+    "★장비수★":gap("f_eq_cnt"), "★장비내용★":g("f_eq_desc","          "),
+    "★지원협조★":g("f_support","확인중"), "★향후대책★":g("f_outlook","확인중"),
+  };
+  let out=text;
+  for(const k in map){ out=out.split(k).join(esc(map[k])); }
+  return out;
+}
+function downloadHwpxForm(){
+  const T=window.HWPX_TEMPLATE;
+  if(!T||!T.files){ alert("양식 템플릿을 불러오지 못했습니다. 새로고침(Ctrl+Shift+R) 후 다시 시도하세요."); return; }
+  const enc=new TextEncoder(); const entries=[];
+  for(const f of T.files){ if(f.name==="mimetype"){ entries.push({name:"mimetype",data:b64ToU8(f.b64)}); } }
+  for(const f of T.files){
+    if(f.name==="mimetype") continue;
+    if(f.name==="Contents/section0.xml"){ entries.push({name:f.name,data:enc.encode(fillHwpxSection(f.text))}); }
+    else { entries.push({name:f.name,data:b64ToU8(f.b64)}); }
+  }
+  saveBlob(makeZip(entries), `재난상황보고서_${stamp()}.hwpx`);
+}
+
 // ── 호환용 .doc ──
 function reportDocHTML(){
-  const g=(id,d="")=>{const v=$(id).value.trim();return esc(v||d);};
-  const gap=(id)=>{const v=$(id).value.trim();return esc(v||"&nbsp;&nbsp;");};
-  const rep=$("reporterLine"); const contact=(rep.style.display!=="none"&&rep.textContent)?`<div style="margin-left:14px">${esc(rep.textContent)}</div>`:"";
+  const g=(id,d="")=>{const v=$(id).value.trim();return v?esc(v):d;};
+  const gap=(id)=>{const v=$(id).value.trim();return v?esc(v):"&nbsp;&nbsp;";};
+  const rep=$("reporterLine"); const contact=(rep.style.display!=="none"&&rep.textContent)?("<br>&nbsp;&nbsp;&nbsp;"+esc(rep.textContent)):"";
   const tr=$("training").checked?"[훈련] ":"";
-  return `<div style="font-size:9pt;color:#555">■ 재난 및 안전관리 기본법 시행규칙 [별지 제1호서식]</div>
-<div style="text-align:center;font-size:18pt;font-weight:bold;letter-spacing:6px;margin:12pt 0 4pt">${tr}재난상황 보고서</div>
-<div style="text-align:center;font-size:10pt;margin-bottom:12pt">즉시 보고 제 ${g("f_reportNo","&nbsp;&nbsp;&nbsp;")} 호</div>
-<div style="font-size:10.5pt;line-height:1.9"><div>수신 : ${g("f_su")}</div><div>시행일시 : ${g("f_sihaeng")} &nbsp;&nbsp; 접수일시 : ${g("f_jeopsu")}</div><div>발신 : 동해시 재난안전상황실 &nbsp;&nbsp; 성명 : ${g("f_author")} (서명 또는 인)</div><div>제목 : ${g("f_title")}</div></div>
-<hr style="border:none;border-top:1.5px solid #222;margin:8pt 0 10pt">
-<div style="font-size:11pt;line-height:1.95">
-<div style="margin-bottom:6pt"><b>1. 일시</b> : ${g("f_ilsi")}</div>
-<div style="margin-bottom:6pt"><b>2. 장소</b> : ${g("f_jangso")}</div>
-<div style="margin-bottom:6pt"><b>3. 상황 개요</b><div style="margin-left:14px">${g("f_gaeyo","확인중")}</div>${contact}</div>
-<div style="margin-bottom:6pt"><b>4. 피해상황</b><div style="margin-left:14px">가. 인명피해 : ${gap("f_in_tot")}명 (사망: ${gap("f_in_dead")}, 실종: ${gap("f_in_miss")}, 부상: ${gap("f_in_hurt")})</div><div style="margin-left:24px;font-size:9pt;color:#666">※ 별첨: 사망자·실종자 인적사항</div><div style="margin-left:14px">나. 재산피해 : ${g("f_property","확인중")}</div><div style="margin-left:14px">다. 그 밖의 피해 : ${g("f_other","확인중")}</div></div>
-<div style="margin-bottom:6pt"><b>5. 응급조치 사항</b><div style="margin-left:14px">가. 조치사항 : ${g("f_action","확인중")}</div><div style="margin-left:14px">나. 동원사항</div><div style="margin-left:24px">- 인력 : ${gap("f_m_tot")}명 (민간인: ${gap("f_m_civ")}, 군인: ${gap("f_m_army")}, 경찰관: ${gap("f_m_police")}, 소방공무원: ${gap("f_m_fire")}, 공무원: ${gap("f_m_gov")})</div><div style="margin-left:24px">- 장비 : ${gap("f_eq_cnt")}대 (${g("f_eq_desc")})</div></div>
-<div style="margin-bottom:6pt"><b>6. 지원 및 협조사항</b> : ${g("f_support","확인중")}</div>
-<div style="margin-bottom:6pt"><b>7. 향후 전망 및 대책</b> : ${g("f_outlook","확인중")}</div></div>`;
+  const cell="border:0.75pt solid #000;padding:6pt 8pt;vertical-align:top;";
+  return `<div style="font-size:9pt;margin-bottom:2pt">■ 재난 및 안전관리 기본법 시행규칙 [별지 제1호서식] &lt;개정 2012.12.6&gt;</div>
+<p style="text-align:center;font-size:19pt;font-weight:bold;letter-spacing:7pt;margin:8pt 0 2pt">${tr}재난상황 보고서</p>
+<p style="text-align:center;font-size:10.5pt;margin:0 0 7pt">즉시 보고 제 ${g("f_reportNo","&nbsp;&nbsp;")} 호</p>
+<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:10.5pt;line-height:1.85">
+<tr><td style="${cell}">
+수신 : ${g("f_su")}<br>
+시행일시 : ${g("f_sihaeng")} &nbsp;&nbsp;&nbsp; 접수일시 : ${g("f_jeopsu")}<br>
+발신 : 동해시 재난안전상황실 &nbsp;&nbsp; 성명 : ${g("f_author")} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명 또는 인)<br>
+제목 : ${g("f_title")}
+</td></tr>
+<tr><td style="${cell}line-height:1.95">
+<b>1. 일시</b> : ${g("f_ilsi")}<br>
+<b>2. 장소</b> : ${g("f_jangso")}<br>
+<b>3. 상황 개요</b><br>&nbsp;&nbsp;&nbsp;${g("f_gaeyo","확인중")}${contact}<br>
+<b>4. 피해상황</b><br>
+&nbsp;&nbsp;가. 인명피해 : ${gap("f_in_tot")}명 (사망: ${gap("f_in_dead")}, 실종: ${gap("f_in_miss")}, 부상: ${gap("f_in_hurt")})<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="font-size:9pt">※ 별첨: 사망자·실종자 인적사항</span><br>
+&nbsp;&nbsp;나. 재산피해 : ${g("f_property","확인중")}<br>
+&nbsp;&nbsp;다. 그 밖의 피해 : ${g("f_other","확인중")}<br>
+<b>5. 응급조치 사항</b><br>
+&nbsp;&nbsp;가. 조치사항 : ${g("f_action","확인중")}<br>
+&nbsp;&nbsp;나. 동원사항<br>
+&nbsp;&nbsp;&nbsp;&nbsp;- 인력 : ${gap("f_m_tot")}명 (민간인: ${gap("f_m_civ")}, 군인: ${gap("f_m_army")}, 경찰관: ${gap("f_m_police")}, 소방공무원: ${gap("f_m_fire")}, 공무원: ${gap("f_m_gov")})<br>
+&nbsp;&nbsp;&nbsp;&nbsp;- 장비 : ${gap("f_eq_cnt")}대 (${g("f_eq_desc")})<br>
+<b>6. 지원 및 협조사항</b> : ${g("f_support","확인중")}<br>
+<b>7. 향후 전망 및 대책</b> : ${g("f_outlook","확인중")}
+</td></tr>
+</table>
+<p style="font-size:9.5pt;margin-top:10pt;line-height:1.7"><b>작 성 방 법</b><br>
+1. 사망자·실종자 인적사항은 붙임자료로 제출할 수 있습니다.<br>
+2. ⑤란부터 ⑦란까지는 필요한 경우에만 작성할 수 있습니다.</p>
+<p style="text-align:center;font-size:8.5pt;color:#555;margin-top:6pt">210mm×297mm[백상지 80g/㎡(재활용품)]</p>`;
 }
 function downloadDoc(){
-  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>@page{size:210mm 297mm;margin:20mm}body{font-family:'바탕','Batang',serif}</style></head><body>${reportDocHTML()}</body></html>`;
-  saveBlob(new Blob(["\ufeff"+html],{type:"application/msword;charset=utf-8"}),`재난상황보고서_${stamp()}.doc`);
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>재난상황보고서</title><style>@page{size:210mm 297mm;margin:18mm}body{font-family:'바탕','Batang',serif;color:#000}</style></head><body>${reportDocHTML()}</body></html>`;
+  saveBlob(new Blob(["﻿"+html],{type:"application/msword;charset=utf-8"}),`재난상황보고서_${stamp()}.doc`);
 }
 
 // ── 보고서 텍스트 ──
@@ -921,7 +978,7 @@ $("reportNo").addEventListener("input",e=>$("f_reportNo").value=e.target.value);
 $("genBtn").addEventListener("click",generate);
 $("copyBtn").addEventListener("click",copyReport);
 $("printBtn").addEventListener("click",()=>window.print());
-$("hwpxBtn").addEventListener("click",downloadHwpx);
+$("hwpxFormBtn").addEventListener("click",downloadHwpxForm);
 $("docBtn").addEventListener("click",downloadDoc);
 $("rerollBtn").addEventListener("click",()=>{if(trainState)applyTrainLoc(pickLoc());});
 $("cbsSelect").addEventListener("change",renderCBS);

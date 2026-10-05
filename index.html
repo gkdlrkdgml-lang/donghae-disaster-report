@@ -245,12 +245,14 @@
     </div>
   </div>
 
-<script src="data/config.js"></script>
-<script src="data/disaster-types.js"></script>
-<script src="data/locations.js"></script>
-<script src="data/gaeyo-templates.js"></script>
-<script src="data/cbs-templates.js"></script>
-<script src="data/jihwi-templates.js"></script>
+<script>
+// 데이터 파일을 매번 최신으로 로드 (브라우저 캐시 방지 — 새로고침만 해도 반영됨)
+(function(){
+  var v=Date.now();
+  var files=["config","disaster-types","locations","gaeyo-templates","cbs-templates","jihwi-templates"];
+  files.forEach(function(f){ document.write('<scr'+'ipt src="data/'+f+'.js?t='+v+'"><\/scr'+'ipt>'); });
+})();
+</script>
 <script>
 // ── 카카오 지도 SDK 로드 (키가 있을 때만, services 라이브러리 포함) ──
 (function loadKakao(){

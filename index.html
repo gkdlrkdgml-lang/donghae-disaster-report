@@ -567,7 +567,9 @@ async function generate(){
     $("jwLevel").value=W.warnLevel||"주의보";
     $("jwMode").value=W.mode||"issue";
     $("jwTime").value=W.time||"";
-    $("jwArea").value=W.area||"";
+    // 발표구역: 특보 종류별 동해시 구역 자동 지정 (표에 없으면 기본값, 그래도 없으면 추출값)
+    const areaMap=JW.areaByType||{};
+    $("jwArea").value=areaMap[W.warnType]||JW.areaDefault||W.area||"";
     renderJihwi();
     $("msgTabs").style.display="flex";
     showMsgTab("jihwi");

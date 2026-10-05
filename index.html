@@ -79,6 +79,11 @@
   .s2 .stage-num{background:var(--cyan)} .s2 .stage-tag{background:#3da9fc22;color:#9fd4ff;border:1px solid #3da9fc55}
   .s3 .stage-num{background:var(--amber)} .s3 .stage-tag{background:#f5a62322;color:#ffd48a;border:1px solid #f5a62355}
   .stage-body{padding:14px}
+  .wxtile{flex:1 1 calc(33.3% - 10px);min-width:92px;background:#0f2438;border:1px solid #1e3a52;border-radius:9px;padding:11px 10px;text-align:center}
+  .wxtile .wl{font-size:11px;color:var(--dim);margin-bottom:5px}
+  .wxtile .wv{font-size:19px;font-weight:800;color:var(--ink);line-height:1.1}
+  .wxtile .wu{font-size:11px;color:var(--dim);font-weight:400}
+  .wxtile.rain{border-color:#3da9fc66;background:#0d2b45} .wxtile.wind{border-color:#f5a62355}
   .stage-body .cbs,.stage-body .jihwi{border:none;background:transparent;padding:0;margin:0}
   .stage-body .cbs h4,.stage-body .jihwi h4{display:none}
   .paper{background:#fff;color:#111;border-radius:4px;padding:40px 38px;box-shadow:0 8px 30px rgba(0,0,0,.4);font-family:'Batang','바탕',serif;font-size:13.5px;line-height:1.85}
@@ -152,10 +157,10 @@
         <div id="mapView" style="width:100%;height:600px;border-radius:8px;overflow:hidden;background:#0a1220"></div>
         <div id="mapAddr" style="font-size:12px;color:var(--ink);margin-top:8px;line-height:1.5"></div>
         <div id="mapMsg" style="font-size:11px;color:var(--dim);margin-top:4px"></div>
-        <div id="wxBox" style="display:none;margin-top:10px;background:#0a1a2a;border:1px solid #1e3a52;border-radius:8px;padding:10px 12px">
-          <div style="font-size:11px;color:var(--dim);font-weight:700;margin-bottom:6px">🌦 현재 기상 <span id="wxTime" style="font-weight:400"></span></div>
-          <div id="wxMain" style="font-size:13px;color:var(--ink);line-height:1.7"></div>
-          <div id="wxMsg" style="font-size:11px;color:var(--dim);margin-top:4px"></div>
+        <div id="wxBox" style="display:none;margin-top:12px;background:#0a1a2a;border:1px solid #2a567e;border-radius:10px;padding:16px 18px">
+          <div style="font-size:14px;color:#8fd0ff;font-weight:800;margin-bottom:12px">🌦 발생 위치 현재 기상 <span id="wxTime" style="font-weight:400;font-size:12px;color:var(--dim)"></span></div>
+          <div id="wxMain" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+          <div id="wxMsg" style="font-size:12px;color:var(--dim);margin-top:6px"></div>
         </div>
       </div>
     </div>
@@ -1076,14 +1081,15 @@ async function fetchWeather(lat,lng){
     const items=((j.response||{}).body||{}).items;
     if(!items||!items.item){ throw new Error("no data"); }
     const v={}; items.item.forEach(it=>v[it.category]=it.obsrValue);
-    const pty=PTY[v.PTY]||"-";
-    const parts=[];
-    if(v.T1H!==undefined) parts.push(`🌡 기온 <b>${v.T1H}℃</b>`);
-    if(v.RN1!==undefined && v.PTY!=="0") parts.push(`☔ 강수 <b>${v.RN1}mm</b>`);
-    parts.push(`💧 습도 ${v.REH||"-"}%`);
-    if(v.WSD!==undefined) parts.push(`🌬 바람 <b>${v.WSD}m/s</b>${v.VEC!==undefined?`(${windDir(v.VEC)})`:""}`);
-    parts.push(`☁ ${pty}`);
-    $("wxMain").innerHTML=parts.join(" · ");
+    const raining=(v.PTY&&v.PTY!=="0");
+    const tile=(label,val,unit,cls)=>`<div class="wxtile ${cls||''}"><div class="wl">${label}</div><div class="wv">${val}<span class="wu">${unit||''}</span></div></div>`;
+    const tiles=[];
+    if(v.T1H!==undefined) tiles.push(tile("🌡 기온",v.T1H,"℃"));
+    tiles.push(tile("☁ 하늘·강수",PTY[v.PTY]||"-","",raining?"rain":""));
+    if(v.RN1!==undefined) tiles.push(tile("☔ 1시간 강수",(v.RN1==="강수없음"||v.RN1==="0"?"0":v.RN1),"mm",raining?"rain":""));
+    if(v.WSD!==undefined) tiles.push(tile("🌬 바람",v.WSD,`m/s ${v.VEC!==undefined?windDir(v.VEC):""}`,"wind"));
+    tiles.push(tile("💧 습도",v.REH||"-","%"));
+    $("wxMain").innerHTML=tiles.join("");
     $("wxTime").textContent=`(${base_date.slice(4,6)}.${base_date.slice(6,8)}. ${base_time.slice(0,2)}시 기준)`;
     $("wxMsg").textContent="";
   }catch(e){

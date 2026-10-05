@@ -678,8 +678,8 @@ function prefillJihwi(type, dateStr, place){
     "교통사고":"교통사고","터널화재":"화재","지진":"지진","폭염·온열질환":"기타"};
   const jt=map[type]||"기타";
   if(JI.types[jt]){ $("jType").value=jt; }
-  // 일시: "2026. 1. 5.(월) 09:56" → "01.05. 09:56"
-  const m=(dateStr||"").match(/(\d{1,2})\.\s*(\d{1,2})\.(?:\([^)]*\))?\s*(\d{1,2}:\d{2})?/);
+  // 일시: "2026. 7. 15.(월) 09:56" → "07.15. 09:56"  (연도 건너뛰고 월·일·시각)
+  const m=(dateStr||"").match(/\d{4}\.\s*(\d{1,2})\.\s*(\d{1,2})\.(?:\s*\([^)]*\))?\s*(\d{1,2}:\d{2})?/);
   if(m){ $("jDate").value=`${String(m[1]).padStart(2,"0")}.${String(m[2]).padStart(2,"0")}.${m[3]?(" "+m[3]):""}`; }
   if(place){ $("jPlace").value=place.replace(/^동해시\s*/,""); }
   // 유형 기본 문구
@@ -788,6 +788,12 @@ $("jStage").addEventListener("change",renderJihwi);
 $("jCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("jOut").value);const b=$("jCopy");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="문자 복사";b.classList.remove("ok");},1600);}catch(e){}});
 initJihwi();
 initCbsSelect();
+// 메시지 탭은 처음부터 보이게 (기상특보는 재난 없이도 바로 작성 가능)
+$("msgTabs").style.display="flex";
+showMsgTab("cbs");
+renderCBS();        // 기본 재난문자 1건 표시
+fillIncidentDefaults();
+renderJihwi();       // 지휘부 기본 문구 표시
 </script>
 </body>
 </html>

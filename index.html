@@ -284,6 +284,14 @@ function fmtDateTime(s){
 }
 function hhmm(s){const m=(s||"").match(/(\d{1,2})\s*[:시]\s*(\d{2})?/);return m?`${String(m[1]).padStart(2,"0")}:${String(m[2]||"00").padStart(2,"0")}`:"○○:○○";}
 function nowStr(){const d=new Date(),p=(n)=>String(n).padStart(2,"0");return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.(${DAYS[d.getDay()]}) ${p(d.getHours())}:${p(d.getMinutes())}`;}
+// 받침 유무에 따른 조사 선택 (이/가, 을/를, 은/는)
+function hasJong(word){
+  if(!word) return false;
+  const ch=word[word.length-1]; const c=ch.charCodeAt(0);
+  if(c<0xAC00||c>0xD7A3) return false; // 한글 아니면 받침 없음 처리
+  return (c-0xAC00)%28!==0;
+}
+function josa(word, withJong, noJong){ return (word||"")+(hasJong(word)?withJong:noJong); }
 // 제목 형식: [훈련] [N보] 동해시 (발생주소) (유형) 상황보고서
 function makeTitle(bo, training, addr, type){
   const addrShort=(addr||"")
@@ -674,7 +682,7 @@ async function generate(){
   $("msgTabs").style.display="flex";
   prefillJihwi(dtype, ilsi, jangso, R.detail, R.prog);
 
-  const offlineGaeyo=`${ilsi?ilsi+" ":""}${jangso}에서 ${dtype||"재난"}이(가) 발생함. 현재 ${R.prog||"상황 파악"} 단계로, 인명·재산 피해 여부를 확인 중임.`.trim();
+  const offlineGaeyo=`${ilsi?ilsi+" ":""}${jangso}에서 ${josa(dtype||"재난","이","가")} 발생함. 현재 ${R.prog||"상황 파악"} 단계로, 인명·재산 피해 여부를 확인 중임.`.trim();
   if($("useAI").checked && $("apiKey").value.trim()){
     try{const out=await aiCompose(R,ilsi,jangso,dtype);$("f_gaeyo").value=out.gaeyo||offlineGaeyo;$("f_outlook").value=out.outlook||"";}
     catch(e){$("f_gaeyo").value=offlineGaeyo;showMsg("AI 다듬기는 실패했지만 인식된 정보로 채웠습니다.","warn");}

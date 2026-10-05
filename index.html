@@ -145,6 +145,14 @@
         <div><div class="lab">작성자</div><input class="in" id="author" value="청원경찰 최범석"></div>
         <div><div class="lab">즉시보고 번호(보)</div><input class="in" id="reportNo" placeholder="자동 인식"></div>
       </div>
+
+      <!-- 발생 위치 지도 -->
+      <div class="card" id="mapCard" style="display:none">
+        <div class="lab">📍 발생 위치</div>
+        <div id="mapView" style="width:100%;height:240px;border-radius:8px;overflow:hidden;background:#0a1220"></div>
+        <div id="mapAddr" style="font-size:12px;color:var(--ink);margin-top:8px;line-height:1.5"></div>
+        <div id="mapMsg" style="font-size:11px;color:var(--dim);margin-top:4px"></div>
+      </div>
     </div>
 
     <div class="col-right">
@@ -466,6 +474,7 @@ function applyTrainLoc(loc){
   const mtnType=/산불|산사태/.test(S.type);
   // 사고장소: 실제 도로명 주소를 그대로 사용
   $("f_jangso").value=loc.addr;
+  showMapByQuery(loc.addr, loc.addr);
   // 상황개요: 유형별 정제된 문장 틀 사용 (원문 치환 X → 깔끔·일관)
   const placeForGaeyo=`동해시 ${loc.dong} ${loc.place}`;
   $("f_gaeyo").value=buildGaeyo(S.type, S.time||"○○:○○", placeForGaeyo);
@@ -753,6 +762,7 @@ async function generate(){
   setTraining(R.training);
   $("f_reportNo").value=R.bo||""; $("reportNo").value=R.bo||"";
   $("f_ilsi").value=ilsi; $("f_jangso").value=jangso; $("f_title").value=title;
+  showMapByQuery(jangso, jangso);
   $("f_sihaeng").value=R.balsinIlsi?fmtDateTime(R.balsinIlsi):nowStr();
   $("f_jeopsu").value=R.singoIlsi?fmtDateTime(R.singoIlsi):nowStr();
 
@@ -1000,9 +1010,56 @@ function applySearchedPlace(p, display){
     cbsRegion=dong?("동해시 "+dong):"동해시"; cbsFacility=p.place_name;
     renderCBS();
   }
+  // 지도 표시 (검색 결과는 좌표를 바로 가짐)
+  if(p.y&&p.x) showMapByCoords(parseFloat(p.y), parseFloat(p.x), display);
   // 검색창 닫기
   $("placeSearchBox").style.display="none";
   $("placeResults").innerHTML=""; $("placeMsg").textContent="";
+}
+
+// ── 발생 위치 지도 ──
+let kakaoMap=null, kakaoMarker=null;
+function showMapByCoords(lat,lng,label){
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps){ return; }
+  $("mapCard").style.display="block";
+  $("mapView").style.display="block";
+  const pos=new kakao.maps.LatLng(lat,lng);
+  if(!kakaoMap){
+    kakaoMap=new kakao.maps.Map($("mapView"), {center:pos, level:4});
+    kakaoMarker=new kakao.maps.Marker({position:pos});
+    kakaoMarker.setMap(kakaoMap);
+  }else{
+    kakaoMarker.setPosition(pos);
+  }
+  setTimeout(()=>{ if(kakaoMap){ kakaoMap.relayout(); kakaoMap.setCenter(pos); } },60);
+  $("mapAddr").textContent=label||"";
+  $("mapMsg").textContent="";
+}
+function showMapByQuery(query, label){
+  const q=(query||"").trim(); if(!q) return;
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){
+    $("mapCard").style.display="block"; $("mapView").style.display="none";
+    $("mapAddr").textContent=label||q; $("mapMsg").textContent="지도를 사용할 수 없습니다(인터넷·API 확인).";
+    return;
+  }
+  const addrOnly=q.replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim(); // (시설명) 제거
+  const geo=new kakao.maps.services.Geocoder();
+  geo.addressSearch(addrOnly, function(result, status){
+    if(status===kakao.maps.services.Status.OK && result.length){
+      showMapByCoords(parseFloat(result[0].y), parseFloat(result[0].x), label||q);
+    }else{
+      const ps=new kakao.maps.services.Places();
+      ps.keywordSearch(/동해/.test(q)?q:("동해시 "+q), function(data, st){
+        if(st===kakao.maps.services.Status.OK && data.length){
+          const d=data.filter(x=>/동해시/.test((x.road_address_name||"")+(x.address_name||"")))[0]||data[0];
+          showMapByCoords(parseFloat(d.y), parseFloat(d.x), label||q);
+        }else{
+          $("mapCard").style.display="block"; $("mapView").style.display="none";
+          $("mapAddr").textContent=label||q; $("mapMsg").textContent="지도에서 위치를 찾지 못했습니다. 장소를 확인하세요.";
+        }
+      });
+    }
+  });
 }
 
 // 이벤트
@@ -1016,6 +1073,7 @@ $("printBtn").addEventListener("click",()=>window.print());
 $("hwpxFormBtn").addEventListener("click",downloadHwpxForm);
 $("docBtn").addEventListener("click",downloadDoc);
 $("rerollBtn").addEventListener("click",()=>{if(trainState)applyTrainLoc(pickLoc());});
+$("f_jangso").addEventListener("change",e=>{const v=e.target.value.trim(); if(v) showMapByQuery(v, v);});
 $("cbsSelect").addEventListener("change",renderCBS);
 $("cbsText").addEventListener("input",updateCbsCnt);
 $("tab90").addEventListener("click",()=>{cbsLen=90;$("tab90").classList.add("on");$("tab157").classList.remove("on");renderCBS();});

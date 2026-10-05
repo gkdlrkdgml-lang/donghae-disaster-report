@@ -846,7 +846,11 @@ function renderJihwi(){
   if(jKind==="video"){
     const JV=window.JIHWI_VIDEO||{templates:[]};
     const idx=+($("jvSelect").value||0);
-    out=(JV.templates[idx]||"").replace(/\{tail\}/g,JTAIL);
+    out=(JV.templates[idx]||"").replace(/\{tail\}/g,JTAIL)
+          .split("/").map(s=>s.trim()).filter(Boolean).join("\n");
+    $("jOut").value=out;
+    $("jCnt").textContent=`${[...out].length}자 · 약 ${byteLen(out)}바이트`;
+    return;
   }else if(jKind==="weather"){
     const warn=$("jwType").value+$("jwLevel").value;
     const mode=$("jwMode").value;

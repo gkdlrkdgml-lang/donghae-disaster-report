@@ -175,7 +175,12 @@
           </div>
           <div class="jrow"><label>일시</label><input type="text" id="jDate" style="flex:1" placeholder="01.05. 09:56"></div>
           <div class="jrow"><label>장소</label><input type="text" id="jPlace" style="flex:1" placeholder="발한동 247-14 (○○ 앞)"></div>
-          <div class="jrow" style="align-items:flex-start"><label>상황보고</label><textarea id="jSit" style="flex:1;min-height:40px"></textarea></div>
+          <div class="jrow" style="align-items:flex-start"><label>상황보고</label>
+            <div style="flex:1">
+              <textarea id="jSit" style="width:100%;box-sizing:border-box;min-height:40px"></textarea>
+              <button class="mini" id="jAiBtn" style="margin-top:4px">✨ AI로 문장 다듬기</button>
+            </div>
+          </div>
           <div class="jrow" style="align-items:flex-start"><label>조치사항</label><textarea id="jAct" style="flex:1;min-height:40px"></textarea></div>
           <div class="jrow" id="jEndRow" style="display:none"><label>종결일시</label><input type="text" id="jEnd" style="flex:1" placeholder="01.05. 10:10"></div>
         </div>
@@ -750,6 +755,57 @@ function showMsgTab(which){
   $("cbsCard").style.display=cbs?"block":"none";
   $("jihwiCard").style.display=cbs?"none":"block";
 }
+// 신고내역 설명 문구 → 보고서체 상황보고로 정리 (규칙 기반)
+function cleanSit(detail, jt){
+  const d=(detail||"").trim();
+  const cues=[];
+  if(/연기/.test(d)) cues.push("연기");
+  if(/불꽃|화염|불길|불이|불남|불났/.test(d)) cues.push("화재");
+  if(/펑|폭발|터졌|터지|굉음|폭발음/.test(d)) cues.push("폭발음");
+  if(/가스|냄새|매캐/.test(d)) cues.push("가스 냄새");
+  if(/붕괴|무너/.test(d)) cues.push("붕괴");
+  if(/쓰러|전도|넘어/.test(d)) cues.push("시설물 전도");
+  if(/침수|물\s*차|물이\s*참|잠김|잠겨/.test(d)) cues.push("침수");
+  if(/추돌|충돌|전복/.test(d)) cues.push("차량 사고");
+  if(/매몰/.test(d)) cues.push("매몰");
+  if(cues.length){
+    // 중복 제거 후 "A 및 B 발생 신고 접수"
+    const uniq=[...new Set(cues)];
+    return uniq.join(" 및 ")+" 발생 신고 접수";
+  }
+  // 큐가 없으면: 원문 어미 정리
+  if(d){ return d.replace(/[\s,]*(도\s*나고|나고|난다|났다|있다는|라는|같다는|같습니다|합니다|함)?\s*$/,"").trim()+" 신고 접수"; }
+  return (JI.types[jt]||{}).sit||"";
+}
+// 단계별 조치사항 예시 적용
+function applyStageAct(){
+  const jt=$("jType").value;
+  const stage=$("jStage").value;
+  const d=JI.types[jt]||{};
+  const byStage=(d.actByStage&&d.actByStage[stage])||(JI.stageAct&&JI.stageAct[stage])||d.act||"";
+  $("jAct").value=byStage;
+  renderJihwi();
+}
+// AI로 상황보고 문장 다듬기 (선택 · API키 필요)
+async function aiPolishJihwi(){
+  const key=$("apiKey").value.trim();
+  if(!key){ alert("AI 다듬기는 좌측 하단 'AI 문장 다듬기'를 펼쳐 API 키를 먼저 입력해야 사용할 수 있어요."); return; }
+  const cur=$("jSit").value.trim(); if(!cur){ return; }
+  const b=$("jAiBtn"); const old=b.textContent; b.textContent="다듬는 중..."; b.disabled=true;
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:200,messages:[{role:"user",content:
+`너는 동해시 재난안전상황실 지휘부 보고 담당자다. 아래 신고 내용을 지휘부 안내문자의 '상황보고' 한 구절로 간결하게 다듬어라.
+- 개조식, 명사형 종결(예: "연기 및 화재 발생 신고 접수").
+- 사실만 사용, 지어내지 말 것. 15자~40자 내외.
+- 따옴표·설명 없이 결과 문장만 출력.
+신고 내용: ${cur}`}]})});
+    const data=await res.json(); const txt=(data.content||[]).map(c=>c.text||"").join("").trim();
+    if(txt){ $("jSit").value=txt.replace(/^["'\s]+|["'\s]+$/g,""); renderJihwi(); }
+  }catch(e){ alert("AI 다듬기에 실패했습니다. 인터넷·API 키를 확인하세요."); }
+  b.textContent=old; b.disabled=false;
+}
 // 보고서 생성 시 지휘부 탭에 상황 정보 자동 채우기
 function prefillJihwi(type, dateStr, place, detail){
   // 재난유형 → 지휘부 유형 매핑
@@ -758,14 +814,16 @@ function prefillJihwi(type, dateStr, place, detail){
     "교통사고":"교통사고","터널화재":"화재","지진":"지진","폭염·온열질환":"기타"};
   const jt=map[type]||"기타";
   if(JI.types[jt]){ $("jType").value=jt; }
+  $("jStage").value="1보";
   // 일시: "2026. 7. 15.(월) 09:56" → "07.15. 09:56"  (연도 건너뛰고 월·일·시각)
   const m=(dateStr||"").match(/\d{4}\.\s*(\d{1,2})\.\s*(\d{1,2})\.(?:\s*\([^)]*\))?\s*(\d{1,2}:\d{2})?/);
   if(m){ $("jDate").value=`${String(m[1]).padStart(2,"0")}.${String(m[2]).padStart(2,"0")}.${m[3]?(" "+m[3]):""}`; }
   if(place){ $("jPlace").value=place.replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시\s*/,""); }
-  // 상황보고: 신고내역 상세가 있으면 그걸 사용, 없으면 유형 기본 문구
+  // 상황보고: 신고내역을 보고서체로 정리
+  $("jSit").value=cleanSit(detail, jt);
+  // 조치사항: 1보 단계 예시
   const d=JI.types[jt]||{};
-  $("jSit").value=(detail&&detail.trim())?detail.trim():(d.sit||"");
-  $("jAct").value=d.act||"";
+  $("jAct").value=(d.actByStage&&d.actByStage["1보"])||d.act||"";
   renderJihwi();
 }
 
@@ -862,9 +920,10 @@ $("mtabCbs").addEventListener("click",()=>showMsgTab("cbs"));
 $("mtabJihwi").addEventListener("click",()=>showMsgTab("jihwi"));
 $("jkindIncident").addEventListener("click",()=>switchJKind("incident"));
 $("jkindWeather").addEventListener("click",()=>switchJKind("weather"));
-$("jType").addEventListener("change",()=>{fillIncidentDefaults();renderJihwi();});
-["jStage","jDate","jPlace","jSit","jAct","jEnd"].forEach(id=>$(id).addEventListener("input",renderJihwi));
-$("jStage").addEventListener("change",renderJihwi);
+$("jType").addEventListener("change",()=>{const d=JI.types[$("jType").value]||{};$("jSit").value=d.sit||"";applyStageAct();});
+["jDate","jPlace","jSit","jAct","jEnd"].forEach(id=>$(id).addEventListener("input",renderJihwi));
+$("jStage").addEventListener("change",applyStageAct);
+$("jAiBtn").addEventListener("click",aiPolishJihwi);
 ["jwType","jwLevel","jwMode","jwTime","jwArea"].forEach(id=>$(id).addEventListener("input",renderJihwi));
 ["jwType","jwLevel","jwMode"].forEach(id=>$(id).addEventListener("change",renderJihwi));
 $("jCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("jOut").value);const b=$("jCopy");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="문자 복사";b.classList.remove("ok");},1600);}catch(e){}});

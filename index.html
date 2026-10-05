@@ -299,7 +299,19 @@ function parseMessage(text){
     const parts=R.naeyeok.split(/\/+/).map(s=>s.trim()).filter(Boolean);
     const phones=parts.filter(p=>/\d{2,4}[-\s]?\d{3,4}[-\s]?\d{4}/.test(p));
     const non=parts.filter(p=>!phones.includes(p));
-    R.incident=non[0]||""; R.facility=non[1]||""; R.reporter=non[2]||""; R.phones=phones;
+    // 설명 문구(소리·연기·상황 서술) 판별 — 장소/신고자로 쓰면 안 되는 것들
+    const DESC=/소리|연기|냄새|불이|불났|불남|났다|난다|발생|신고|접수|보임|추정|의심|피어|터졌|쓰러|넘어|쏟|샌다|새고|확산|미상|중임|같|함$/;
+    // 건물·장소 힌트 (장소에 붙일 수 있는 것)
+    const BLD=/\d+\s*동|\d+\s*호|\d+\s*층|건물|아파트|빌라|빌딩|타워|병원|요양|학교|공장|시장|주유소|충전소|터널|상가|호텔|리조트|센터|마을|항\b|해수욕장|공단|주공|빌|관\b/;
+    R.phones=phones;
+    // 건물: 설명이 아니면서 건물 키워드를 가진 첫 조각
+    R.facility=non.find(s=>!DESC.test(s)&&BLD.test(s))||"";
+    // 신고자: 전화번호가 있을 때만, 2~4자 한글 이름(설명·건물 아님)
+    R.reporter=(phones.length? (non.find(s=>/^[가-힣]{2,4}$/.test(s)&&!DESC.test(s)&&s!==R.facility)||"") : "");
+    // 상황보고용 상세: 건물·신고자·전화 제외한 나머지(주로 설명 문구)
+    R.detail=non.filter(s=>s!==R.facility&&s!==R.reporter).join(", ");
+    // 재난유형 추정용 첫 조각
+    R.incident=non[0]||"";
   }
   return R;
 }
@@ -638,7 +650,7 @@ async function generate(){
   let mi=CBS.findIndex(c=>c.kw.test(hay)); if(mi<0)mi=0;
   $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
   $("msgTabs").style.display="flex";
-  prefillJihwi(dtype, ilsi, jangso);
+  prefillJihwi(dtype, ilsi, jangso, R.detail);
 
   const offlineGaeyo=`${ilsi?ilsi+" ":""}${jangso}에서 ${dtype||"재난"}이(가) 발생함. 현재 ${R.prog||"상황 파악"} 단계로, 인명·재산 피해 여부를 확인 중임.`.trim();
   if($("useAI").checked && $("apiKey").value.trim()){
@@ -722,7 +734,7 @@ function showMsgTab(which){
   $("jihwiCard").style.display=cbs?"none":"block";
 }
 // 보고서 생성 시 지휘부 탭에 상황 정보 자동 채우기
-function prefillJihwi(type, dateStr, place){
+function prefillJihwi(type, dateStr, place, detail){
   // 재난유형 → 지휘부 유형 매핑
   const map={"화재":"화재","폭발":"화재","산불":"산불","산사태":"붕괴","붕괴":"붕괴",
     "침수":"침수","호우·침수":"침수","유해화학물질":"유해화학물질","정전":"정전",
@@ -732,9 +744,11 @@ function prefillJihwi(type, dateStr, place){
   // 일시: "2026. 7. 15.(월) 09:56" → "07.15. 09:56"  (연도 건너뛰고 월·일·시각)
   const m=(dateStr||"").match(/\d{4}\.\s*(\d{1,2})\.\s*(\d{1,2})\.(?:\s*\([^)]*\))?\s*(\d{1,2}:\d{2})?/);
   if(m){ $("jDate").value=`${String(m[1]).padStart(2,"0")}.${String(m[2]).padStart(2,"0")}.${m[3]?(" "+m[3]):""}`; }
-  if(place){ $("jPlace").value=place.replace(/^동해시\s*/,""); }
-  // 유형 기본 문구
-  const d=JI.types[jt]||{}; $("jSit").value=d.sit||""; $("jAct").value=d.act||"";
+  if(place){ $("jPlace").value=place.replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시\s*/,""); }
+  // 상황보고: 신고내역 상세가 있으면 그걸 사용, 없으면 유형 기본 문구
+  const d=JI.types[jt]||{};
+  $("jSit").value=(detail&&detail.trim())?detail.trim():(d.sit||"");
+  $("jAct").value=d.act||"";
   renderJihwi();
 }
 

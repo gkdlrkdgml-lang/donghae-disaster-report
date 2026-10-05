@@ -187,6 +187,7 @@
               <label>종류</label>
               <button class="mini on" id="jkindIncident">상황 발생보고</button>
               <button class="mini" id="jkindWeather">기상특보</button>
+              <button class="mini" id="jkindVideo">📹 재난영상 송출</button>
             </div>
             <div id="jIncidentBox">
               <div class="jrow">
@@ -211,6 +212,10 @@
               </div>
               <div class="jrow"><label>시각</label><input type="text" id="jwTime" style="flex:1" placeholder="01.10. 06:00"></div>
               <div class="jrow"><label>발표구역</label><input type="text" id="jwArea" style="flex:1" placeholder="동해중부앞바다, 강원남부산지"></div>
+            </div>
+            <div id="jVideoBox" style="display:none">
+              <div class="jrow"><label>문안</label><select id="jvSelect" style="flex:1"></select></div>
+              <div class="hint" style="margin:2px 0 0">중요재난 시 지휘부에 Xprotect Mobile 앱으로 재난영상 확인을 요청하는 안내문자입니다.</div>
             </div>
             <textarea class="out" id="jOut" placeholder="자동 생성된 문자가 여기에 표시됩니다"></textarea>
             <div class="jrow" style="margin-top:8px;margin-bottom:0">
@@ -827,6 +832,9 @@ function initJihwi(){
   // 기상특보
   $("jwType").innerHTML=(JW.types||[]).map(t=>`<option>${t}</option>`).join("");
   $("jwLevel").innerHTML=(JW.levels||[]).map(l=>`<option>${l}</option>`).join("");
+  // 재난영상 송출 문안
+  const JV=window.JIHWI_VIDEO||{templates:[]};
+  $("jvSelect").innerHTML=(JV.templates||[]).map((t,i)=>`<option value="${i}">${t.replace("{tail}","").trim().slice(0,30)}…</option>`).join("");
 }
 function fillIncidentDefaults(){
   const t=$("jType").value; const d=(JI.types||{})[t]||{};
@@ -835,7 +843,11 @@ function fillIncidentDefaults(){
 }
 function renderJihwi(){
   let out="";
-  if(jKind==="weather"){
+  if(jKind==="video"){
+    const JV=window.JIHWI_VIDEO||{templates:[]};
+    const idx=+($("jvSelect").value||0);
+    out=(JV.templates[idx]||"").replace(/\{tail\}/g,JTAIL);
+  }else if(jKind==="weather"){
     const warn=$("jwType").value+$("jwLevel").value;
     const mode=$("jwMode").value;
     const tmpl=mode==="issue"?JW.issue:JW.release;
@@ -863,8 +875,10 @@ function switchJKind(k){
   jKind=k;
   $("jkindIncident").classList.toggle("on",k==="incident");
   $("jkindWeather").classList.toggle("on",k==="weather");
+  $("jkindVideo").classList.toggle("on",k==="video");
   $("jIncidentBox").style.display=(k==="incident")?"block":"none";
   $("jWeatherBox").style.display=(k==="weather")?"block":"none";
+  $("jVideoBox").style.display=(k==="video")?"block":"none";
   renderJihwi();
 }
 // 단계형 레이아웃: 세 영역이 항상 보이므로 탭 전환은 무동작
@@ -1192,6 +1206,8 @@ $("mtabCbs").addEventListener("click",()=>showMsgTab("cbs"));
 $("mtabJihwi").addEventListener("click",()=>showMsgTab("jihwi"));
 $("jkindIncident").addEventListener("click",()=>switchJKind("incident"));
 $("jkindWeather").addEventListener("click",()=>switchJKind("weather"));
+$("jkindVideo").addEventListener("click",()=>switchJKind("video"));
+$("jvSelect").addEventListener("change",renderJihwi);
 $("jType").addEventListener("change",()=>{const d=JI.types[$("jType").value]||{};$("jSit").value=d.sit||"";applyStageAct();});
 ["jDate","jPlace","jSit","jAct","jEnd"].forEach(id=>$(id).addEventListener("input",renderJihwi));
 $("jStage").addEventListener("change",applyStageAct);

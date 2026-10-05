@@ -521,14 +521,63 @@ function reportText(){
 
 function setTraining(on){$("training").checked=on;$("trainTag").style.display=on?"inline":"none";$("statusDot").className="dot"+(on?" train":"");}
 
+// ── 기상특보 상황전파 메시지 파서 ──
+function parseWeatherAlert(text){
+  const R={};
+  // 제목: "1보 [기상특보] 호우주의보 해제 자동상황전파"
+  const titleLine=(text.match(/제\s*목\s*[:：]\s*([^\n]+)/)||[])[1]||text;
+  // 특보 종류 + 등급
+  const wm=titleLine.match(/(풍랑|강풍|대설|호우|한파|폭염|건조|태풍|폭풍해일|해일|안개|황사)\s*(주의보|경보|예비특보)/);
+  R.warnType=wm?wm[1]:""; R.warnLevel=wm?wm[2]:"주의보";
+  // 발표/해제/변경
+  if(/해제/.test(titleLine)) R.mode="release";
+  else R.mode="issue"; // 발표, 변경에 의한 발표 등
+  // 발표시각: "[발표시각] 2025년 09월 13일 08시 20분" 또는 "발효시각:..."
+  let tm=text.match(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일\s*(\d{1,2})\s*시\s*(\d{1,2})?\s*분?/);
+  if(tm){ R.time=`${String(tm[2]).padStart(2,"0")}.${String(tm[3]).padStart(2,"0")}. ${String(tm[4]).padStart(2,"0")}:${String(tm[5]||"00").padStart(2,"0")}`; }
+  else {
+    const t2=text.match(/(발효|발표)\s*시각\s*[:：]\s*(\d{1,2})[.\s]+(\d{1,2})[.\s]*(\d{1,2})?[:시]?\s*(\d{1,2})?/);
+    if(t2) R.time=`${String(t2[2]).padStart(2,"0")}.${String(t2[3]).padStart(2,"0")}. ${t2[4]?String(t2[4]).padStart(2,"0"):"00"}:${t2[5]||"00"}`;
+  }
+  // 발표구역: [발표구역목록] 뒤 ~ [내용] 전. 강원(...)만 추출
+  let areaBlock=(text.match(/\[?발표\s*구역(?:목록)?\]?\s*[:：]?\s*([\s\S]*?)(?:\[내용\]|○내용|내용\s*[:：]|$)/)||[])[1]||"";
+  areaBlock=areaBlock.replace(/\s+/g," ").trim();
+  const gw=areaBlock.match(/강원\s*\(([^)]*)\)/);
+  if(gw){ R.area="강원("+gw[1].replace(/\s*,\s*/g,",")+")"; }
+  else if(areaBlock){ R.area=areaBlock.slice(0,60); }
+  else R.area="";
+  return R;
+}
+
 async function generate(){
   const raw=$("raw").value;
   if(!raw.trim()){showMsg("먼저 메시지 내용을 붙여넣어 주세요.","err");return;}
   const btn=$("genBtn");btn.disabled=true;btn.textContent="메시지 분석 중...";showMsg("","");
 
-  // 형식 판별: 소방 자동전파(신고일시/발생위치) vs 훈련 메시지(사고일시/상황개요/○○)
+  // 형식 판별: 기상특보 / 소방 자동전파 / 훈련 메시지
+  const isWeather=/\[기상특보\]|기상특보|발표\s*구역|발효시각|발표시각/.test(raw) && /(주의보|경보|특보)/.test(raw);
   const isSobang=/신고일시|발생위치/.test(raw);
-  const isTrain=!isSobang && (/사고일시|상황\s*개요/.test(raw) || (raw.match(/○○/g)||[]).length>=2);
+  const isTrain=!isSobang && !isWeather && (/사고일시|상황\s*개요/.test(raw) || (raw.match(/○○/g)||[]).length>=2);
+
+  // ── 기상특보 메시지 → 지휘부 기상특보 문자 자동작성 ──
+  if(isWeather && !isSobang){
+    const W=parseWeatherAlert(raw);
+    switchJKind("weather");
+    if(W.warnType) $("jwType").value=W.warnType;
+    $("jwLevel").value=W.warnLevel||"주의보";
+    $("jwMode").value=W.mode||"issue";
+    $("jwTime").value=W.time||"";
+    $("jwArea").value=W.area||"";
+    renderJihwi();
+    $("msgTabs").style.display="flex";
+    showMsgTab("jihwi");
+    const warnFull=(W.warnType||"")+(W.warnLevel||"");
+    const act=W.mode==="release"?"해제":"발표";
+    $("tags").innerHTML=`<span class="tag">✓ 기상특보</span><span class="tag">✓ ${warnFull} ${act}</span>`;
+    showMsg("기상특보 메시지로 인식했습니다. 지휘부 안내문자(기상특보)를 작성했어요. 발표구역은 강원 부분만 추출했으니 확인·수정하세요.","warn");
+    btn.disabled=false;btn.textContent="✦ 메시지 분석 → 보고서 생성";
+    return;
+  }
 
   if(isTrain){
     const R=parseTraining(raw);

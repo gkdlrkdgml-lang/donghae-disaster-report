@@ -47,6 +47,22 @@
   .cbs .cbtn{margin-left:auto;background:var(--amber);color:#1a1200;border:none;border-radius:6px;padding:7px 15px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
   .cbs .cbtn.ok{background:var(--green);color:#04170c}
   .cbs .hint{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.5}
+  /* 메시지 상단 탭 (재난문자 / 지휘부) */
+  .msgtabs{display:flex;gap:0;margin-bottom:10px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .msgtabs button{flex:1;background:var(--panel);color:var(--dim);border:none;padding:9px 0;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  .msgtabs button.on{background:var(--amber);color:#1a1200}
+  .jihwi{background:#1b2233;border:1px solid #4a6fa5;border-radius:10px;padding:14px;margin-bottom:12px}
+  .jihwi h4{margin:0 0 10px;font-size:13px;color:#8fb8ff;display:flex;align-items:center;gap:6px}
+  .jihwi select,.jihwi input[type=text]{background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:7px 9px;font-size:12.5px;outline:none;font-family:inherit}
+  .jihwi .jrow{display:flex;gap:6px;margin-bottom:7px;flex-wrap:wrap;align-items:center}
+  .jihwi label{font-size:11px;color:var(--dim);font-weight:700;min-width:52px}
+  .jihwi textarea{width:100%;box-sizing:border-box;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px;font-size:12.5px;line-height:1.6;min-height:52px;resize:vertical;font-family:inherit}
+  .jihwi .out{width:100%;box-sizing:border-box;background:#0A1220;border:1px solid #4a6fa5;border-radius:6px;color:#dce9ff;padding:10px;font-size:13.5px;line-height:1.7;min-height:92px;resize:vertical;font-family:inherit;margin-top:4px}
+  .jihwi .mini{background:#223;border:1px solid var(--line);color:#9fb4d4;border-radius:5px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .jihwi .mini.on{background:#8fb8ff;color:#06162e;border-color:#8fb8ff}
+  .jihwi .cbtn{background:#5a8fe0;color:#06162e;border:none;border-radius:6px;padding:7px 15px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .jihwi .cbtn.ok{background:var(--green);color:#04170c}
+  .jihwi .hint{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.5}
   .paper{background:#fff;color:#111;border-radius:4px;padding:40px 38px;box-shadow:0 8px 30px rgba(0,0,0,.4);font-family:'Batang','바탕',serif;font-size:13.5px;line-height:1.85}
   .p-tag{font-size:10.5px;color:#666}
   .p-title{text-align:center;font-size:21px;font-weight:800;letter-spacing:.15em;margin:14px 0 4px}
@@ -121,6 +137,12 @@
       </div>
       <button class="subact" id="docBtn">hwpx가 안 열리면 → 호환 문서(.doc)로 저장</button>
 
+      <!-- 메시지 상단 탭 -->
+      <div class="msgtabs" id="msgTabs" style="display:none">
+        <button id="mtabCbs" class="on">📣 재난문자 (주민)</button>
+        <button id="mtabJihwi">📨 지휘부 안내문자</button>
+      </div>
+
       <div class="cbs" id="cbsCard" style="display:none">
         <h4>📣 재난문자 표준문안 <span style="color:var(--dim);font-weight:400">— 참고용 · 문서에는 미포함</span></h4>
         <select id="cbsSelect"></select>
@@ -134,6 +156,46 @@
           <button class="cbtn" id="cbsCopy">문자 복사</button>
         </div>
         <div class="hint">행정안전부 표준문안 기반. ○○(지역·시각·시설명)은 신고내역에서 자동 반영됩니다. 유형에 안 맞는 시설명 치환이나 발송 여부는 직접 확인하세요.</div>
+      </div>
+
+      <!-- 지휘부 안내문자 -->
+      <div class="jihwi" id="jihwiCard" style="display:none">
+        <h4>📨 지휘부 안내문자 <span style="color:var(--dim);font-weight:400">— 참고용 · 문서에는 미포함</span></h4>
+        <div class="jrow">
+          <label>종류</label>
+          <button class="mini on" id="jkindIncident">상황 발생보고</button>
+          <button class="mini" id="jkindWeather">기상특보</button>
+        </div>
+
+        <!-- 상황 발생보고 입력 -->
+        <div id="jIncidentBox">
+          <div class="jrow">
+            <label>유형</label><select id="jType"></select>
+            <label style="min-width:auto">단계</label><select id="jStage"></select>
+          </div>
+          <div class="jrow"><label>일시</label><input type="text" id="jDate" style="flex:1" placeholder="01.05. 09:56"></div>
+          <div class="jrow"><label>장소</label><input type="text" id="jPlace" style="flex:1" placeholder="발한동 247-14 (○○ 앞)"></div>
+          <div class="jrow" style="align-items:flex-start"><label>상황보고</label><textarea id="jSit" style="flex:1;min-height:40px"></textarea></div>
+          <div class="jrow" style="align-items:flex-start"><label>조치사항</label><textarea id="jAct" style="flex:1;min-height:40px"></textarea></div>
+          <div class="jrow" id="jEndRow" style="display:none"><label>종결일시</label><input type="text" id="jEnd" style="flex:1" placeholder="01.05. 10:10"></div>
+        </div>
+
+        <!-- 기상특보 입력 -->
+        <div id="jWeatherBox" style="display:none">
+          <div class="jrow">
+            <label>특보</label><select id="jwType"></select><select id="jwLevel"></select>
+            <label style="min-width:auto">구분</label><select id="jwMode"><option value="issue">발표</option><option value="release">해제</option></select>
+          </div>
+          <div class="jrow"><label>시각</label><input type="text" id="jwTime" style="flex:1" placeholder="01.10. 06:00"></div>
+          <div class="jrow"><label>발표구역</label><input type="text" id="jwArea" style="flex:1" placeholder="동해중부앞바다, 강원남부산지"></div>
+        </div>
+
+        <textarea class="out" id="jOut" placeholder="자동 생성된 문자가 여기에 표시됩니다"></textarea>
+        <div class="jrow" style="margin-top:8px;margin-bottom:0">
+          <span class="cnt" id="jCnt" style="font-size:11.5px;color:var(--dim)"></span>
+          <button class="cbtn" id="jCopy" style="margin-left:auto">문자 복사</button>
+        </div>
+        <div class="hint">과거 발송 실적 패턴 기반. 입력하면 문구가 자동 완성되며, 발송 전 ○○·세부 내용을 직접 확인·수정하세요.</div>
       </div>
 
       <div class="paper">
@@ -188,6 +250,7 @@
 <script src="data/locations.js"></script>
 <script src="data/gaeyo-templates.js"></script>
 <script src="data/cbs-templates.js"></script>
+<script src="data/jihwi-templates.js"></script>
 <script>
 // ── 카카오 지도 SDK 로드 (키가 있을 때만, services 라이브러리 포함) ──
 (function loadKakao(){
@@ -338,6 +401,8 @@ function applyTrainLoc(loc){
   cbsRegion=`동해시 ${loc.dong}`; cbsFacility=loc.place;
   const hay=S.type+" "+loc.addr; let mi=CBS.findIndex(c=>c.kw.test(hay)); if(mi<0)mi=0;
   $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
+  $("msgTabs").style.display="flex";
+  prefillJihwi(S.type, $("f_ilsi").value, loc.addr);
 }
 
 function showMsg(text,type){const el=$("msg");el.textContent=text;el.className="msg"+(type?" "+type:"");}
@@ -521,6 +586,8 @@ async function generate(){
   const hay=(dtype||"")+" "+(jangso||"")+" "+(R.prog||"");
   let mi=CBS.findIndex(c=>c.kw.test(hay)); if(mi<0)mi=0;
   $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
+  $("msgTabs").style.display="flex";
+  prefillJihwi(dtype, ilsi, jangso);
 
   const offlineGaeyo=`${ilsi?ilsi+" ":""}${jangso}에서 ${dtype||"재난"}이(가) 발생함. 현재 ${R.prog||"상황 파악"} 단계로, 인명·재산 피해 여부를 확인 중임.`.trim();
   if($("useAI").checked && $("apiKey").value.trim()){
@@ -543,6 +610,82 @@ async function aiCompose(R,ilsi,jangso,dtype){
 }
 
 async function copyReport(){try{await navigator.clipboard.writeText(reportText());const b=$("copyBtn");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="전체 복사";b.classList.remove("ok");},1600);}catch(e){showMsg("복사 실패","err");}}
+
+// ── 지휘부 안내문자 ──
+const JW=window.JIHWI_WEATHER||{types:[],levels:[],issue:"",release:""};
+const JI=window.JIHWI_INCIDENT||{stages:[],types:{},report:"",closing:""};
+const JTAIL=window.JIHWI_TAIL||"[동해시재난안전상황실]";
+let jKind="incident"; // incident | weather
+
+function initJihwi(){
+  // 상황 유형
+  $("jType").innerHTML=Object.keys(JI.types).map(t=>`<option>${t}</option>`).join("");
+  $("jStage").innerHTML=(JI.stages||[]).map(s=>`<option>${s}</option>`).join("");
+  // 기상특보
+  $("jwType").innerHTML=(JW.types||[]).map(t=>`<option>${t}</option>`).join("");
+  $("jwLevel").innerHTML=(JW.levels||[]).map(l=>`<option>${l}</option>`).join("");
+}
+function fillIncidentDefaults(){
+  const t=$("jType").value; const d=(JI.types||{})[t]||{};
+  if(!$("jSit").value.trim()) $("jSit").value=d.sit||"";
+  if(!$("jAct").value.trim()) $("jAct").value=d.act||"";
+}
+function renderJihwi(){
+  let out="";
+  if(jKind==="weather"){
+    const warn=$("jwType").value+$("jwLevel").value;
+    const mode=$("jwMode").value;
+    const tmpl=mode==="issue"?JW.issue:JW.release;
+    out=tmpl.replace(/\{warn\}/g,warn).replace(/\{time\}/g,$("jwTime").value||"○○.○○. ○○:○○")
+            .replace(/\{area\}/g,$("jwArea").value||"○○").replace(/\{tail\}/g,JTAIL);
+  }else{
+    const type=$("jType").value, stage=$("jStage").value;
+    const closing=(stage==="종결");
+    $("jEndRow").style.display=closing?"flex":"none";
+    const tmpl=closing?JI.closing:JI.report;
+    out=tmpl.replace(/\{type\}/g,type).replace(/\{stage\}/g,stage)
+            .replace(/\{d\}/g,$("jDate").value||"○○.○○. ○○:○○")
+            .replace(/\{p\}/g,$("jPlace").value||"○○")
+            .replace(/\{sit\}/g,$("jSit").value||"○○")
+            .replace(/\{act\}/g,$("jAct").value||"○○")
+            .replace(/\{end\}/g,$("jEnd").value||"○○.○○. ○○:○○")
+            .replace(/\{tail\}/g,JTAIL);
+  }
+  $("jOut").value=out;
+  $("jCnt").textContent=`${[...out].length}자 · 약 ${byteLen(out)}바이트`;
+}
+function switchJKind(k){
+  jKind=k;
+  $("jkindIncident").classList.toggle("on",k==="incident");
+  $("jkindWeather").classList.toggle("on",k==="weather");
+  $("jIncidentBox").style.display=(k==="incident")?"block":"none";
+  $("jWeatherBox").style.display=(k==="weather")?"block":"none";
+  renderJihwi();
+}
+// 상단 탭 전환
+function showMsgTab(which){
+  const cbs=which==="cbs";
+  $("mtabCbs").classList.toggle("on",cbs);
+  $("mtabJihwi").classList.toggle("on",!cbs);
+  $("cbsCard").style.display=cbs?"block":"none";
+  $("jihwiCard").style.display=cbs?"none":"block";
+}
+// 보고서 생성 시 지휘부 탭에 상황 정보 자동 채우기
+function prefillJihwi(type, dateStr, place){
+  // 재난유형 → 지휘부 유형 매핑
+  const map={"화재":"화재","폭발":"화재","산불":"산불","산사태":"붕괴","붕괴":"붕괴",
+    "침수":"침수","호우·침수":"침수","유해화학물질":"유해화학물질","정전":"정전",
+    "교통사고":"교통사고","터널화재":"화재","지진":"지진","폭염·온열질환":"기타"};
+  const jt=map[type]||"기타";
+  if(JI.types[jt]){ $("jType").value=jt; }
+  // 일시: "2026. 1. 5.(월) 09:56" → "01.05. 09:56"
+  const m=(dateStr||"").match(/(\d{1,2})\.\s*(\d{1,2})\.(?:\([^)]*\))?\s*(\d{1,2}:\d{2})?/);
+  if(m){ $("jDate").value=`${String(m[1]).padStart(2,"0")}.${String(m[2]).padStart(2,"0")}.${m[3]?(" "+m[3]):""}`; }
+  if(place){ $("jPlace").value=place.replace(/^동해시\s*/,""); }
+  // 유형 기본 문구
+  const d=JI.types[jt]||{}; $("jSit").value=d.sit||""; $("jAct").value=d.act||"";
+  renderJihwi();
+}
 
 // ── 카카오 장소 검색 ──
 function toggleSearch(){
@@ -632,6 +775,18 @@ $("cbsCopy").addEventListener("click",async()=>{try{await navigator.clipboard.wr
 $("placeSearchBtn").addEventListener("click",toggleSearch);
 $("placeGoBtn").addEventListener("click",doPlaceSearch);
 $("placeQuery").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doPlaceSearch();}});
+// 지휘부 안내문자 이벤트
+$("mtabCbs").addEventListener("click",()=>showMsgTab("cbs"));
+$("mtabJihwi").addEventListener("click",()=>showMsgTab("jihwi"));
+$("jkindIncident").addEventListener("click",()=>switchJKind("incident"));
+$("jkindWeather").addEventListener("click",()=>switchJKind("weather"));
+$("jType").addEventListener("change",()=>{fillIncidentDefaults();renderJihwi();});
+["jStage","jDate","jPlace","jSit","jAct","jEnd"].forEach(id=>$(id).addEventListener("input",renderJihwi));
+$("jStage").addEventListener("change",renderJihwi);
+["jwType","jwLevel","jwMode","jwTime","jwArea"].forEach(id=>$(id).addEventListener("input",renderJihwi));
+["jwType","jwLevel","jwMode"].forEach(id=>$(id).addEventListener("change",renderJihwi));
+$("jCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("jOut").value);const b=$("jCopy");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="문자 복사";b.classList.remove("ok");},1600);}catch(e){}});
+initJihwi();
 initCbsSelect();
 </script>
 </body>

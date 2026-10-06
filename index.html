@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06k</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06l</span>
   </div>
 
   <div class="topnav">
@@ -1269,6 +1269,33 @@ function showMapByCoords(lat,lng,label){
   $("mapMsg").textContent="";
   fetchWeather(lat,lng);  // 발생 위치 기상 조회
 }
+// 동해시 주소/장소 → 좌표. 도로명만 입력해도 동해시를 자동으로 붙여 여러 형태로 시도.
+function geocodeDonghae(query, onFound, onFail){
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ onFail&&onFail("nokakao"); return; }
+  const base=(query||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();  // (시설명) 제거
+  if(!base){ onFail&&onFail("empty"); return; }
+  const hasCity=/동해시/.test(base);
+  const cands = hasCity ? [base] : ["강원특별자치도 동해시 "+base, "강원도 동해시 "+base, "동해시 "+base, base];
+  const geo=new kakao.maps.services.Geocoder();
+  const tryAddr=(i)=>{
+    if(i>=cands.length){
+      // 주소 실패 → 장소(POI) 키워드 검색
+      const ps=new kakao.maps.services.Places();
+      ps.keywordSearch(hasCity?base:("동해시 "+base), function(data, st){
+        if(st===kakao.maps.services.Status.OK && data.length){
+          const d=data.filter(x=>/동해시/.test((x.road_address_name||"")+(x.address_name||"")))[0]||data[0];
+          onFound(parseFloat(d.y), parseFloat(d.x));
+        }else{ onFail&&onFail("notfound"); }
+      });
+      return;
+    }
+    geo.addressSearch(cands[i], function(result, status){
+      if(status===kakao.maps.services.Status.OK && result.length){ onFound(parseFloat(result[0].y), parseFloat(result[0].x)); }
+      else { tryAddr(i+1); }
+    });
+  };
+  tryAddr(0);
+}
 
 // ── 기상청 단기예보: 좌표→격자 변환 + 초단기실황 조회 ──
 function kmaGrid(lat,lon){
@@ -1370,24 +1397,10 @@ function showMapByQuery(query, label){
     $("mapAddr").textContent=label||q; $("mapMsg").textContent="지도를 사용할 수 없습니다(인터넷·API 확인).";
     return;
   }
-  const addrOnly=q.replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim(); // (시설명) 제거
-  const geo=new kakao.maps.services.Geocoder();
-  geo.addressSearch(addrOnly, function(result, status){
-    if(status===kakao.maps.services.Status.OK && result.length){
-      showMapByCoords(parseFloat(result[0].y), parseFloat(result[0].x), label||q);
-    }else{
-      const ps=new kakao.maps.services.Places();
-      ps.keywordSearch(/동해/.test(q)?q:("동해시 "+q), function(data, st){
-        if(st===kakao.maps.services.Status.OK && data.length){
-          const d=data.filter(x=>/동해시/.test((x.road_address_name||"")+(x.address_name||"")))[0]||data[0];
-          showMapByCoords(parseFloat(d.y), parseFloat(d.x), label||q);
-        }else{
-          $("mapCard").style.display="block"; $("mapView").style.display="none";
-          $("mapAddr").textContent=label||q; $("mapMsg").textContent="지도에서 위치를 찾지 못했습니다. 장소를 확인하세요.";
-        }
-      });
-    }
-  });
+  geocodeDonghae(q,
+    (lat,lng)=>showMapByCoords(lat,lng,label||q),
+    ()=>{ $("mapCard").style.display="block"; $("mapView").style.display="none";
+          $("mapAddr").textContent=label||q; $("mapMsg").textContent="지도에서 위치를 찾지 못했습니다. 장소를 확인하세요."; });
 }
 
 // 이벤트
@@ -1552,18 +1565,9 @@ function dashMapShow(){
   if(!q){ if(!dashMap) dashMsg("발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다."); return; }
   dashMapLastQuery=q;   // 중복 지오코딩 방지
   if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ dashMsg("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); return; }
-  const addrOnly=q.replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
-  const geo=new kakao.maps.services.Geocoder();
-  geo.addressSearch(addrOnly,function(r,s){
-    if(s===kakao.maps.services.Status.OK && r.length){ dashMapCoords(+r[0].y,+r[0].x,q); }
-    else {
-      const ps=new kakao.maps.services.Places();
-      ps.keywordSearch(/동해/.test(q)?q:("동해시 "+q),function(d,st){
-        if(st===kakao.maps.services.Status.OK && d.length){ const x=d.filter(e=>/동해시/.test((e.road_address_name||"")+(e.address_name||"")))[0]||d[0]; dashMapCoords(+x.y,+x.x,q); }
-        else { dashMsg("지도에서 위치를 찾지 못했습니다. 장소를 확인하세요."); }
-      });
-    }
-  });
+  geocodeDonghae(q,
+    (lat,lng)=>dashMapCoords(lat,lng,q),
+    ()=>dashMsg("지도에서 위치를 찾지 못했습니다. 장소를 확인하세요."));
 }
 
 // ── 상황 일지 / 조치사항 (Firebase 공유 또는 PC 개별 저장) ──

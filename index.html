@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06j</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06k</span>
   </div>
 
   <div class="topnav">
@@ -1443,7 +1443,7 @@ renderJihwi();       // 지휘부 기본 문구 표시
 // ══════════════ 재난상황판 대시보드 ══════════════
 const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d;}catch(e){return d;}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
-let newsTimer=null;
+let newsTimer=null, wxTimer=null;
 
 function showPage(p){
   const dash=p==="dash";
@@ -1453,7 +1453,10 @@ function showPage(p){
   $("navDash").classList.toggle("on",dash);
   if(dash){
     if(!$("dmList").dataset.loaded){ $("dmList").dataset.loaded="1"; fetchDisasterMsg(); }
+    // 재난문자 2분마다 자동 갱신
     if(!newsTimer){ newsTimer=setInterval(()=>{ if($("pageDash").style.display!=="none") fetchDisasterMsg(); }, 120000); }
+    // 기상 10분마다 자동 갱신 (현재 표시 중인 위치 기준, 조용히)
+    if(!wxTimer){ wxTimer=setInterval(()=>{ if($("pageDash").style.display!=="none" && window.__dashCoords){ dashWeather(window.__dashCoords.lat, window.__dashCoords.lng, true); } }, 600000); }
     // 지도: 숨김 상태에서 그려졌으면 크기 재계산, 장소 있으면 표시
     setTimeout(()=>{ if(dashMap){ dashMap.relayout(); } dashMapShow(); }, 150);
   }
@@ -1473,6 +1476,9 @@ function applyRemoteSit(s){
   if(af!==$("dsTime")) $("dsTime").value=s.time||"";
   if(af!==$("dsLevel")) $("dsLevel").value=s.level||"0";
   LS.set("dh_sit",s); renderLevelPill();
+  // 발생장소가 (다른 PC에서) 바뀌었으면 지도·기상 자동 갱신
+  const place=(s.place||"").trim();
+  if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); }
 }
 function loadSit(){
   const s=LS.get("dh_sit",{});
@@ -1493,16 +1499,18 @@ function pullFromReport(){
   if($("f_jangso").value)$("dsPlace").value=$("f_jangso").value;
   if($("f_ilsi").value)$("dsTime").value=$("f_ilsi").value;
   saveSit();
+  dashMapLastQuery=($("dsPlace").value||"").trim();   // 에코 재지오코딩 방지
   // 보고서에서 좌표가 넘어왔으면 그 좌표로, 아니면 장소명으로 지도 표시
   if(window.__reportCoords){ dashMapCoords(window.__reportCoords.lat, window.__reportCoords.lng, $("dsPlace").value); }
   else { dashMapShow(); }
 }
 
 // ── 대시보드 지도 (카카오) ──
-let dashMap=null, dashMarker=null;
+let dashMap=null, dashMarker=null, dashMapLastQuery=null;
 function dashMsg(html){ const m=$("dashMapMsg"); if(html){ m.innerHTML=html; m.style.display="flex"; } else { m.style.display="none"; } }
 function dashMapCoords(lat,lng,label){
-  if(!window.__kakaoReady||!window.kakao||!kakao.maps){ dashMsg("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); return; }
+  window.__dashCoords={lat,lng};   // 주기적 기상 갱신용
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps){ dashMsg("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); dashWeather(lat,lng); return; }
   dashMsg("");
   $("dashMapAddr").textContent=label||$("dsPlace").value||"";
   const pos=new kakao.maps.LatLng(lat,lng);
@@ -1511,8 +1519,8 @@ function dashMapCoords(lat,lng,label){
   setTimeout(()=>{ if(dashMap){ dashMap.relayout(); dashMap.setCenter(pos); } }, 80);
   dashWeather(lat,lng);   // 지도 위 현재 기상 표시
 }
-// 지도 위 현재 기상 오버레이 (기상청 초단기실황)
-async function dashWeather(lat,lng){
+// 지도 위 현재 기상 오버레이 (기상청 초단기실황). silent=true면 '조회 중' 깜빡임 없이 조용히 갱신
+async function dashWeather(lat,lng,silent){
   const ov=$("dashWx"); if(!ov) return;
   const key=window.KMA_KEY||""; if(!key){ ov.style.display="none"; return; }
   const g=kmaGrid(lat,lng);
@@ -1520,7 +1528,7 @@ async function dashWeather(lat,lng){
   const p=n=>String(n).padStart(2,"0");
   const bd=`${dd.getFullYear()}${p(dd.getMonth()+1)}${p(dd.getDate())}`, bt=`${p(dd.getHours())}00`;
   const url=`https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?serviceKey=${key}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${bd}&base_time=${bt}&nx=${g.nx}&ny=${g.ny}`;
-  ov.style.display="flex"; ov.innerHTML='<span class="wxttl">🌦 현재 기상</span><span style="color:var(--dim);font-size:12px">조회 중…</span>';
+  ov.style.display="flex"; if(!silent) ov.innerHTML='<span class="wxttl">🌦 현재 기상</span><span style="color:var(--dim);font-size:12px">조회 중…</span>';
   try{
     const res=await fetch(url); const j=await res.json();
     const items=((j.response||{}).body||{}).items; if(!items||!items.item) throw 0;
@@ -1542,6 +1550,7 @@ async function dashWeather(lat,lng){
 function dashMapShow(){
   const q=($("dsPlace").value||"").trim();
   if(!q){ if(!dashMap) dashMsg("발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다."); return; }
+  dashMapLastQuery=q;   // 중복 지오코딩 방지
   if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ dashMsg("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); return; }
   const addrOnly=q.replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
   const geo=new kakao.maps.services.Geocoder();

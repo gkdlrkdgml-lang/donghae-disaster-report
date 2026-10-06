@@ -359,8 +359,22 @@ function makeTitle(bo, training, addr, type){
 
 // ── 메시지 파서 ──
 function parseMessage(text){
-  const grab=(kw)=>{const m=text.match(new RegExp(kw+"\\s*[:：]\\s*([^\\n]+)"));return m?m[1].trim():"";};
+  // 라벨 추출: "라벨 : 값"(콜론형)과 "[라벨] 값"(대괄호형) 모두 지원
+  const grab=(kw)=>{
+    let m=text.match(new RegExp(kw+"\\s*[:：]\\s*([^\\n]+)"));
+    if(m) return m[1].trim();
+    m=text.match(new RegExp("\\[\\s*"+kw+"\\s*\\]\\s*([^\\n]*)"));
+    return m?m[1].trim():"";
+  };
+  // 압축형 일시(YYYYMMDDHHMMSS 등) → 표준형(YYYY-MM-DD HH:MM)으로
+  const normDT=(s)=>{
+    const c=(s||"").replace(/[^\d]/g,"");
+    if(/^\d{12,14}$/.test(c)) return `${c.slice(0,4)}-${c.slice(4,6)}-${c.slice(6,8)} ${c.slice(8,10)}:${c.slice(10,12)}`;
+    return s;
+  };
   const R={};
+  // 대괄호 라벨 양식(119 긴급구조표준시스템) 여부
+  const bracket=/\[\s*(신고일시|재난위치|신고내용|재난분류|전파기관)\s*\]/.test(text);
   // 제목 줄: "제목:" 라벨이 있으면 그 줄, 없으면 [xxx]로 시작하는 첫 줄
   let titleLine=(text.match(/제\s*목\s*[:：]\s*([^\n]+)/)||[])[1]||"";
   if(!titleLine){ titleLine=(text.match(/^\s*(\[[^\]]+\][^\n]*)/m)||[])[1]||""; }
@@ -369,12 +383,38 @@ function parseMessage(text){
   R.dtype=(titleLine.match(/\[([^\]]+)\]/)||[])[1]||"";
   // [고층건물]·[훈련] 등 유형이 아닌 괄호는 걸러내고, 유형규칙으로 재감지
   const TY=(window.DISASTER_TYPES||[]);
-  const byRule=(TY.find(([re])=>re.test(text))||[])[1]||"";
+  // 대괄호 양식은 [재난분류] 값을 유형 감지의 우선 힌트로 사용
+  const classifyText=bracket?(grab("재난분류")+" "+text):text;
+  const byRule=(TY.find(([re])=>re.test(classifyText))||[])[1]||"";
   const KNOWN=/화재|산불|산사태|폭발|붕괴|침수|호우|태풍|강풍|대설|지진|교통|폭염|한파|유해|정전|터널|낙상|추락/;
-  if(!R.dtype || R.dtype==="훈련" || !KNOWN.test(R.dtype)){ R.dtype=byRule||R.dtype; }
+  if(bracket || !R.dtype || R.dtype==="훈련" || !KNOWN.test(R.dtype)){ R.dtype=byRule||R.dtype; }
   R.training=/\[훈련\]|훈련상황|훈련\s*상황전파/.test(text);
-  R.singoIlsi=grab("신고일시"); R.balsaeng=grab("발생위치")||grab("발생장소");
-  R.naeyeok=grab("신고내역")||grab("신고내용"); R.prog=grab("진행상황"); R.balsinIlsi=grab("발신일시");
+  R.singoIlsi=normDT(grab("신고일시")); R.prog=grab("진행상황"); R.balsinIlsi=normDT(grab("발신일시"));
+
+  // ── 대괄호 양식(119 긴급구조표준시스템) 전용 처리 ──
+  if(bracket){
+    // 재난위치: 주소 + (경위도)위도,경도  — 주소와 좌표 분리
+    const locLine=grab("재난위치");
+    const cm=locLine.match(/([0-9]{1,3}\.[0-9]{3,})\s*[,\s]+\s*([0-9]{1,3}\.[0-9]{3,})/);
+    if(cm){ R.lat=parseFloat(cm[1]); R.lng=parseFloat(cm[2]); }
+    R.balsaeng=locLine.replace(/\(?경위도\)?[\s\S]*$/,"").replace(/[0-9]{1,3}\.[0-9]{3,}[\s\S]*$/,"").replace(/[()]/g,"").trim();
+    // 신고내용 블록: [신고내용] ~ 다음 [라벨] 전까지
+    let blk=grabBlock(text,"\\[\\s*신고내용\\s*\\]","\\[\\s*재난위치\\s*\\]|\\[\\s*재난분류\\s*\\]|\\[\\s*전파기관\\s*\\]|$");
+    blk=blk.replace(/[□■○▷▶]\s*요청사유/g,"")          // 서브헤더 제거
+           .replace(/소방접수경로\s*\([^)]*\)/g,"")          // 접수경로 제거
+           .replace(/\*+/g,"")                                // 개인정보 마스킹(*) 제거
+           .replace(/\s*[\r\n]+\s*/g," ").replace(/\s{2,}/g," ").trim();
+    R.naeyeok=blk;
+    // 시설/건물명: 블록에서 건물 명사를 포함한 토막을 하나 추출
+    const BLD=/주공|아파트|빌라|빌딩|타워|병원|요양|학교|공장|주유소|충전소|터널|상가|호텔|리조트|센터|회관|변전소|해수욕장|공단|시장/;
+    R.facility=(blk.split(/\s+/).find(w=>BLD.test(w))||"").trim();
+    R.detail=blk; R.incident=blk; R.phones=[];
+    return R;
+  }
+
+  // ── 기존 콜론형 양식 처리 ──
+  R.balsaeng=grab("발생위치")||grab("발생장소");
+  R.naeyeok=grab("신고내역")||grab("신고내용");
   if(R.naeyeok){
     const isPhone=p=>/\d{2,4}[-\s]?\d{3,4}[-\s]?\d{4}/.test(p);
     const parts=R.naeyeok.split(/\/+/).map(s=>s.trim()).filter(Boolean);
@@ -778,7 +818,7 @@ async function generate(){
   setTraining(R.training);
   $("f_reportNo").value=R.bo||""; $("reportNo").value=R.bo||"";
   $("f_ilsi").value=ilsi; $("f_jangso").value=jangso; $("f_title").value=title;
-  showMapByQuery(jangso, jangso);
+  if(R.lat&&R.lng){ showMapByCoords(R.lat,R.lng,jangso); } else { showMapByQuery(jangso, jangso); }
   $("f_sihaeng").value=R.balsinIlsi?fmtDateTime(R.balsinIlsi):nowStr();
   $("f_jeopsu").value=R.singoIlsi?fmtDateTime(R.singoIlsi):nowStr();
 

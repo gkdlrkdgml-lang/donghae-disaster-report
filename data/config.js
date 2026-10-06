@@ -9,7 +9,7 @@ window.KMA_KEY = "RQIEhSzZ3LYrBeZCv4a7aoFXCjqHzyHY0wLrF%2BTxE8QzvvkWxgE6G0AYGdg4
 
 // 문자전송시스템 주소 (지휘부 안내문자 '문자전송시스템 열기' 버튼이 이 주소를 새 창으로 엽니다)
 // 예: "https://sms.donghae.go.kr" — 아래 따옴표 안에 실제 주소를 넣으세요. 비워두면 버튼이 안 보입니다.
-window.SMS_SYSTEM_URL = "";
+window.SMS_SYSTEM_URL = "http://106.4.2.218/system/login";
 
 // 재난상황판 '실시간 뉴스' 기본 검색어 ('네이버 열기' 버튼에 사용)
 window.NEWS_QUERY = "동해시 재난 사고 안전";

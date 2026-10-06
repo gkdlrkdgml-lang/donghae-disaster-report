@@ -26,6 +26,10 @@ window.DISASTER_MSG_KEY = "H8650I4B948RTDJW";
 window.DISASTER_MSG_REGION = "강원";
 // (고급) 재난문자 API 주소 — 기본값이 사내망에서 막히면 다른 주소로 교체 가능. 비우면 기본 후보들을 순서대로 시도.
 window.DISASTER_MSG_URL = "";
+// 재난문자 중계(구글 앱스스크립트) 주소 — safetydata가 CORS로 막힐 때 사용.
+//  · 앱스스크립트 웹앱을 '모든 사용자'로 배포하고 나온 /exec 주소를 여기 붙여넣으세요.
+//  · 설정되면 이 주소로만 재난문자를 가져옵니다(키는 스크립트 안에 들어있음).
+window.DISASTER_MSG_PROXY = "https://script.google.com/macros/s/AKfycbwoNQvr9k6Dqc37MPk3QHZl65iodbkRj2r1JYzpDpHXzIh7_4GFeNUmQVA6FiSXOxdt/exec";
 
 // ───────────────────────────────────────────────────────────────
 // 조치사항(상황 일지) 여러 PC 실시간 공유 — Firebase 실시간 DB

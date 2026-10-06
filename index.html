@@ -170,7 +170,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06d</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06e</span>
   </div>
 
   <div class="topnav">
@@ -400,7 +400,7 @@
     <div class="side">
       <!-- 상황 일지 -->
       <div class="panel">
-        <h3>📝 상황 일지 · 조치사항 <span class="sub" id="logCount"></span></h3>
+        <h3>📝 상황 일지 · 조치사항 <span class="sub" id="syncBadge" style="color:#7b8da6">PC 개별 저장</span><span class="sub" id="logCount" style="margin-left:8px"></span></h3>
         <div class="pbody" id="logList"></div>
         <div class="ptools">
           <input id="logInput" style="flex:1;min-width:120px;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font-size:13px;outline:none;font-family:inherit" placeholder="조치 내용 입력 후 Enter">
@@ -1438,10 +1438,20 @@ function showPage(p){
   }
 }
 
-// ── 현재 상황 (localStorage 저장) ──
+// ── 현재 상황 (localStorage + Firebase 공유) ──
 function saveSit(){
-  LS.set("dh_sit",{type:$("dsType").value,place:$("dsPlace").value,time:$("dsTime").value,level:$("dsLevel").value});
+  const s={type:$("dsType").value,place:$("dsPlace").value,time:$("dsTime").value,level:$("dsLevel").value};
+  LS.set("dh_sit",s);
   renderLevelPill();
+  if(fbReady){ fbDB.ref("situation").set(s); }   // 모든 화면에 공유
+}
+function applyRemoteSit(s){
+  if(!s) return; const af=document.activeElement;  // 입력 중인 칸은 덮어쓰지 않음
+  if(af!==$("dsType")) $("dsType").value=s.type||"";
+  if(af!==$("dsPlace")) $("dsPlace").value=s.place||"";
+  if(af!==$("dsTime")) $("dsTime").value=s.time||"";
+  if(af!==$("dsLevel")) $("dsLevel").value=s.level||"0";
+  LS.set("dh_sit",s); renderLevelPill();
 }
 function loadSit(){
   const s=LS.get("dh_sit",{});
@@ -1497,32 +1507,46 @@ function dashMapShow(){
   });
 }
 
-// ── 상황 일지 / 조치사항 ──
+// ── 상황 일지 / 조치사항 (Firebase 공유 또는 PC 개별 저장) ──
+let fbDB=null, fbReady=false, fbLogs=null;  // fbLogs: Firebase 로그 캐시
 function getLogs(){ return LS.get("dh_log",[]); }
 function setLogs(a){ LS.set("dh_log",a); renderLog(); }
+function activeLogs(){ return (fbReady && fbLogs) ? fbLogs : getLogs(); }
 function nowHM(){ const d=new Date(),p=n=>String(n).padStart(2,"0"); return `${p(d.getHours())}:${p(d.getMinutes())}`; }
 function addLog(){
   const t=$("logInput").value.trim(); if(!t)return;
-  const logs=getLogs(); logs.unshift({t:nowHM(), x:t, id:Date.now()}); setLogs(logs);
+  const entry={t:nowHM(), x:t, ts:Date.now()};
+  if(fbReady){ fbDB.ref("logs").push(entry); }   // 실시간 공유
+  else { const logs=getLogs(); logs.unshift({...entry, id:Date.now()}); setLogs(logs); }
   $("logInput").value=""; $("logInput").focus();
 }
-function delLog(id){ setLogs(getLogs().filter(l=>l.id!==id)); }
-function editLog(id,txt){ const logs=getLogs(); const l=logs.find(x=>x.id===id); if(l){ l.x=txt; LS.set("dh_log",logs); } }
+function delLog(id){
+  if(fbReady){ fbDB.ref("logs/"+id).remove(); }
+  else { setLogs(getLogs().filter(l=>String(l.id)!==String(id))); }
+}
+function editLog(id,txt){
+  if(fbReady){ fbDB.ref("logs/"+id).update({x:txt}); }
+  else { const logs=getLogs(); const l=logs.find(x=>String(x.id)===String(id)); if(l){ l.x=txt; LS.set("dh_log",logs); } }
+}
 function renderLog(){
-  const logs=getLogs(); const box=$("logList");
+  const logs=activeLogs(); const box=$("logList");
   $("logCount").textContent=logs.length?`${logs.length}건`:"";
   if(!logs.length){ box.innerHTML='<div class="logempty">아직 기록이 없습니다. 조치 내용을 추가하세요.</div>'; return; }
   box.innerHTML=logs.map(l=>
     `<div class="logrow"><span class="lt">${l.t}</span>`+
     `<span class="lx" contenteditable="true" data-id="${l.id}">${escapeHtml(l.x)}</span>`+
-    `<button class="ld" title="삭제" onclick="delLog(${l.id})">×</button></div>`).join("");
+    `<button class="ld" title="삭제" onclick="delLog('${l.id}')">×</button></div>`).join("");
   box.querySelectorAll(".lx").forEach(el=>{
-    el.addEventListener("blur",()=>editLog(+el.dataset.id, el.textContent.trim()));
+    el.addEventListener("blur",()=>editLog(el.dataset.id, el.textContent.trim()));
   });
 }
-function clearLog(){ if(getLogs().length && confirm("상황 일지를 모두 지울까요?")) setLogs([]); }
+function clearLog(){
+  if(!activeLogs().length) return;
+  if(!confirm("상황 일지를 모두 지울까요?"+(fbReady?" (공유 중이면 모든 화면에서 삭제됩니다)":""))) return;
+  if(fbReady){ fbDB.ref("logs").remove(); } else { setLogs([]); }
+}
 function copyLog(){
-  const logs=getLogs(); if(!logs.length){ return; }
+  const logs=activeLogs(); if(!logs.length){ return; }
   const head=`[${$("dsType").value||"상황 일지"}] ${$("dsPlace").value||""}`.trim();
   const body=logs.slice().reverse().map(l=>`${l.t}  ${l.x}`).join("\n");
   const txt=(head?head+"\n":"")+body;
@@ -1664,6 +1688,35 @@ function fmtDmTime(s){
   return s;
 }
 
+// ── Firebase 실시간 공유 (조치사항·현재상황) ──
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+async function initFirebase(){
+  const cfg=window.FIREBASE_CONFIG;
+  if(!cfg || !cfg.databaseURL){ setSyncBadge(false); return; }   // 미설정 → PC 개별 저장
+  try{
+    await loadScript("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
+    await loadScript("https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js");
+    firebase.initializeApp(cfg);
+    fbDB=firebase.database();
+    // 연결 상태
+    fbDB.ref(".info/connected").on("value",snap=>{ fbReady=!!snap.val(); setSyncBadge(fbReady); });
+    // 조치사항 실시간 구독
+    fbDB.ref("logs").on("value",snap=>{
+      const v=snap.val()||{};
+      fbLogs=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>b.ts-a.ts);
+      renderLog();
+    });
+    // 현재 상황 실시간 구독
+    fbDB.ref("situation").on("value",snap=>{ applyRemoteSit(snap.val()); });
+    fbReady=true; setSyncBadge(true);
+  }catch(e){ console.warn("Firebase 연결 실패:",e); fbReady=false; setSyncBadge(false); }
+}
+function setSyncBadge(on){
+  const b=$("syncBadge"); if(!b) return;
+  if(on){ b.textContent="🟢 실시간 공유 중"; b.style.color="#8fe0a6"; }
+  else { b.textContent="PC 개별 저장"; b.style.color="#7b8da6"; }
+}
+
 // ── 대시보드 초기화 ──
 (function initDash(){
   loadSit();
@@ -1678,6 +1731,7 @@ function fmtDmTime(s){
     $("dashClock").textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
     $("dashDate").textContent=`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}(${DW[d.getDay()]})`; };
   tick(); setInterval(tick,1000);
+  initFirebase();   // 설정되어 있으면 실시간 공유 활성화
 })();
 </script>
 </body>

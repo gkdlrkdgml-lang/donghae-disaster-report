@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06n</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06p</span>
   </div>
 
   <div class="topnav">
@@ -406,7 +406,7 @@
     <!-- 우측: 조치사항 + 뉴스 -->
     <div class="side">
       <!-- 상황 일지 -->
-      <div class="panel" style="flex:1.7">
+      <div class="panel" style="flex:1.5">
         <h3>📝 상황 일지 · 조치사항 <span class="sub" id="syncBadge" style="color:#7b8da6">PC 개별 저장</span><span class="sub" id="logCount" style="margin-left:8px"></span></h3>
         <div class="pbody" id="logList"></div>
         <div class="ptools">
@@ -427,6 +427,16 @@
           <button class="dbtn sm" onclick="fetchDisasterMsg()">🔄 새로고침</button>
           <input id="newsQuery" type="hidden">
           <button class="dbtn ghost sm" style="margin-left:auto;background:#1f3a1f;color:#8fe0a6;border-color:#2e7d32" onclick="openNaver()">네이버 뉴스 ↗</button>
+        </div>
+      </div>
+      <!-- 언론보도 -->
+      <div class="panel">
+        <h3>📺 언론보도 <span class="sub" id="pressQ" style="color:#8fb8ff"></span><span class="sub" id="pressTime" style="margin-left:8px"></span></h3>
+        <div class="pbody" id="pressList"><div class="logempty">현재 상황 관련 언론보도를 검색해 표시합니다.<br>새로고침을 누르면 불러옵니다.</div></div>
+        <div class="ptools">
+          <input id="pressQuery" style="flex:1;min-width:110px;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 11px;font-size:14.5px;outline:none;font-family:inherit" placeholder="검색어 (비우면 현재 상황으로)">
+          <button class="dbtn sm" onclick="fetchPress()">🔄 새로고침</button>
+          <button class="dbtn ghost sm" onclick="pressFromSituation()">현재 상황으로</button>
         </div>
       </div>
     </div>
@@ -1483,8 +1493,9 @@ function showPage(p){
   $("navDash").classList.toggle("on",dash);
   if(dash){
     if(!$("dmList").dataset.loaded){ $("dmList").dataset.loaded="1"; fetchDisasterMsg(); }
-    // 재난문자 2분마다 자동 갱신
-    if(!newsTimer){ newsTimer=setInterval(()=>{ if($("pageDash").style.display!=="none") fetchDisasterMsg(); }, 120000); }
+    if(!$("pressList").dataset.loaded){ fetchPress(); }
+    // 재난문자·언론보도 2분마다 자동 갱신
+    if(!newsTimer){ newsTimer=setInterval(()=>{ if($("pageDash").style.display!=="none"){ fetchDisasterMsg(); fetchPress(); } }, 120000); }
     // 기상 10분마다 자동 갱신 (현재 표시 중인 위치 기준, 조용히)
     if(!wxTimer){ wxTimer=setInterval(()=>{ if($("pageDash").style.display!=="none" && window.__dashCoords){ dashWeather(window.__dashCoords.lat, window.__dashCoords.lng, true); } }, 600000); }
     // 지도: 숨김 상태에서 그려졌으면 크기 재계산, 장소 있으면 표시
@@ -1506,9 +1517,9 @@ function applyRemoteSit(s){
   if(af!==$("dsTime")) $("dsTime").value=s.time||"";
   if(af!==$("dsLevel")) $("dsLevel").value=s.level||"0";
   LS.set("dh_sit",s); renderLevelPill();
-  // 발생장소가 (다른 PC에서) 바뀌었으면 지도·기상 자동 갱신
+  // 발생장소가 (다른 PC에서) 바뀌었으면 지도·기상·언론보도 자동 갱신
   const place=(s.place||"").trim();
-  if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); }
+  if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); if(!($("pressQuery").value||"").trim()) fetchPress(); }
 }
 function loadSit(){
   const s=LS.get("dh_sit",{});
@@ -1775,6 +1786,40 @@ function fmtDmTime(s){
   if(n.length>=12) return `${+n.slice(4,6)}.${+n.slice(6,8)} ${n.slice(8,10)}:${n.slice(10,12)}`;
   if(n.length===8) return `${+n.slice(4,6)}.${+n.slice(6,8)}`;
   return s;
+}
+
+// ── 언론보도 (현재 상황 관련 뉴스 — 앱스스크립트 중계로 구글뉴스 검색) ──
+function pressQuery(){
+  const typed=($("pressQuery").value||"").trim();
+  if(typed) return typed;
+  const type=($("dsType").value||"").trim();
+  const place=($("dsPlace").value||"").replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시\s*/,"").split(/\s+/)[0]||"";
+  const q=["동해", type, place].filter(Boolean).join(" ").trim();
+  return q || "동해시 재난 사고";
+}
+function pressFromSituation(){ $("pressQuery").value=""; fetchPress(); }
+async function fetchPress(){
+  const box=$("pressList");
+  const proxy=window.DISASTER_MSG_PROXY||"";
+  if(!proxy){ box.innerHTML='<div class="logempty">언론보도 검색은 중계(앱스스크립트) 설정이 필요합니다.<br>config.js의 <b style="color:#ffd48a">DISASTER_MSG_PROXY</b>를 설정하세요.</div>'; return; }
+  const q=pressQuery();
+  $("pressQ").textContent="‘"+q+"’";
+  box.dataset.loaded="1";
+  box.innerHTML='<div class="logempty">언론보도 검색 중…</div>';
+  try{
+    const url=proxy+(proxy.indexOf("?")>=0?"&":"?")+"type=news&q="+encodeURIComponent(q);
+    const res=await fetch(url,{cache:"no-store"});
+    const data=await res.json();
+    const items=(data&&data.items)||[];
+    if(!items.length){ box.innerHTML='<div class="logempty">현재까지 보도내용 없음.</div>'; $("pressTime").textContent=nowHM()+" 기준"; return; }
+    box.innerHTML=items.slice(0,15).map(it=>{
+      const when=fmtWhen(it.pubDate);
+      return `<a class="newsrow" href="${it.link}" target="_blank" rel="noopener">`+
+        `<div class="nt">${escapeHtml(it.title)}</div>`+
+        `<div class="nm">${it.source?`<span class="src">${escapeHtml(it.source)}</span>`:""}${when?`<span>${when}</span>`:""}</div></a>`;
+    }).join("");
+    $("pressTime").textContent=nowHM()+" 기준";
+  }catch(e){ box.innerHTML='<div class="logempty">보도 검색에 실패했습니다.<br>잠시 후 다시 시도하세요.</div>'; }
 }
 
 // ── Firebase 실시간 공유 (조치사항·현재상황) ──

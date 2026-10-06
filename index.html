@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06p</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06q</span>
   </div>
 
   <div class="topnav">
@@ -1493,7 +1493,7 @@ function showPage(p){
   $("navDash").classList.toggle("on",dash);
   if(dash){
     if(!$("dmList").dataset.loaded){ $("dmList").dataset.loaded="1"; fetchDisasterMsg(); }
-    if(!$("pressList").dataset.loaded){ fetchPress(); }
+    if(!$("pressList").dataset.loaded || (!($("pressQuery").value||"").trim() && pressQuery()!==pressLastQ)){ fetchPress(); }
     // 재난문자·언론보도 2분마다 자동 갱신
     if(!newsTimer){ newsTimer=setInterval(()=>{ if($("pageDash").style.display!=="none"){ fetchDisasterMsg(); fetchPress(); } }, 120000); }
     // 기상 10분마다 자동 갱신 (현재 표시 중인 위치 기준, 조용히)
@@ -1509,6 +1509,7 @@ function saveSit(){
   LS.set("dh_sit",s);
   renderLevelPill();
   if(fbReady){ fbDB.ref("situation").set(s); }   // 모든 화면에 공유
+  schedulePress();   // 상황이 바뀌면 언론보도도 다시 검색
 }
 function applyRemoteSit(s){
   if(!s) return; const af=document.activeElement;  // 입력 중인 칸은 덮어쓰지 않음
@@ -1519,7 +1520,8 @@ function applyRemoteSit(s){
   LS.set("dh_sit",s); renderLevelPill();
   // 발생장소가 (다른 PC에서) 바뀌었으면 지도·기상·언론보도 자동 갱신
   const place=(s.place||"").trim();
-  if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); if(!($("pressQuery").value||"").trim()) fetchPress(); }
+  if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); }
+  schedulePress();
 }
 function loadSit(){
   const s=LS.get("dh_sit",{});
@@ -1544,6 +1546,7 @@ function pullFromReport(){
   // 보고서에서 좌표가 넘어왔으면 그 좌표로, 아니면 장소명으로 지도 표시
   if(window.__reportCoords){ dashMapCoords(window.__reportCoords.lat, window.__reportCoords.lng, $("dsPlace").value); }
   else { dashMapShow(); }
+  schedulePress(0);
 }
 
 // ── 대시보드 지도 (카카오) ──
@@ -1788,38 +1791,65 @@ function fmtDmTime(s){
   return s;
 }
 
-// ── 언론보도 (현재 상황 관련 뉴스 — 앱스스크립트 중계로 구글뉴스 검색) ──
+// ── 언론보도 (현재 재난상황 관련 뉴스 — 앱스스크립트 중계로 구글뉴스 검색) ──
+let pressSeq=0, pressLastQ=null, pressDebounce=null;
+function pressSituation(){   // 현재 상황(유형·장소) → 검색어. 입력된 상황이 없으면 ""
+  const type=($("dsType").value||"").trim();
+  const place=($("dsPlace").value||"").replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시(\s+|$)/,"").trim().split(/\s+/)[0]||"";
+  if(!type && !place) return "";
+  return ["동해", type, place].filter(Boolean).join(" ");
+}
+function pressWhen(){   // 발생일 이후 보도만(구글뉴스 when: 연산자). 발생일을 모르면 최근 3일
+  const m=($("dsTime").value||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  let days=3;
+  if(m){ const diff=Math.floor((Date.now()-new Date(+m[1],+m[2]-1,+m[3]).getTime())/86400000); if(diff>=0 && diff<=60) days=diff+1; }
+  return " when:"+days+"d";
+}
 function pressQuery(){
   const typed=($("pressQuery").value||"").trim();
-  if(typed) return typed;
-  const type=($("dsType").value||"").trim();
-  const place=($("dsPlace").value||"").replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시\s*/,"").split(/\s+/)[0]||"";
-  const q=["동해", type, place].filter(Boolean).join(" ").trim();
-  return q || "동해시 재난 사고";
+  return typed || pressSituation();
 }
 function pressFromSituation(){ $("pressQuery").value=""; fetchPress(); }
+function schedulePress(delay){   // 상황이 바뀌었을 때만, 입력이 멈춘 뒤 한 번 검색
+  if(($("pressQuery").value||"").trim()) return;   // 검색어를 직접 넣은 상태면 그대로 둠
+  if(pressQuery()===pressLastQ) return;
+  clearTimeout(pressDebounce);
+  pressDebounce=setTimeout(()=>{ if($("pageDash").style.display!=="none" && pressQuery()!==pressLastQ) fetchPress(); }, delay==null?1200:delay);
+}
 async function fetchPress(){
   const box=$("pressList");
   const proxy=window.DISASTER_MSG_PROXY||"";
   if(!proxy){ box.innerHTML='<div class="logempty">언론보도 검색은 중계(앱스스크립트) 설정이 필요합니다.<br>config.js의 <b style="color:#ffd48a">DISASTER_MSG_PROXY</b>를 설정하세요.</div>'; return; }
+  const typed=($("pressQuery").value||"").trim();
   const q=pressQuery();
-  $("pressQ").textContent="‘"+q+"’";
+  const seq=++pressSeq; pressLastQ=q;
   box.dataset.loaded="1";
-  box.innerHTML='<div class="logempty">언론보도 검색 중…</div>';
+  if(!q){   // 재난상황이 없으면 검색하지 않음
+    box.dataset.q=""; $("pressQ").textContent=""; $("pressTime").textContent="";
+    box.innerHTML='<div class="logempty">현재 입력된 재난상황이 없습니다.<br>상황 유형·발생장소를 입력하면 관련 보도를 검색합니다.</div>'; return;
+  }
+  $("pressQ").textContent="‘"+q+"’";
+  if(box.dataset.q!==q) box.innerHTML='<div class="logempty">언론보도 검색 중…</div>';   // 자동 갱신 때는 목록을 깜빡이지 않음
   try{
-    const url=proxy+(proxy.indexOf("?")>=0?"&":"?")+"type=news&q="+encodeURIComponent(q);
+    const full=typed ? q : q+pressWhen();
+    const url=proxy+(proxy.indexOf("?")>=0?"&":"?")+"type=news&q="+encodeURIComponent(full);
     const res=await fetch(url,{cache:"no-store"});
     const data=await res.json();
-    const items=(data&&data.items)||[];
-    if(!items.length){ box.innerHTML='<div class="logempty">현재까지 보도내용 없음.</div>'; $("pressTime").textContent=nowHM()+" 기준"; return; }
+    if(seq!==pressSeq) return;   // 그 사이 더 새 검색이 시작됨
+    if(!data || !Array.isArray(data.items)){   // 중계가 뉴스 형식으로 답하지 않음 = 재배포 누락
+      box.dataset.q=""; box.innerHTML='<div class="logempty">중계(앱스스크립트)가 언론보도를 지원하지 않는 이전 버전입니다.<br><b style="color:#ffd48a">배포 관리 → 편집 → ‘새 버전’ → 배포</b>를 해 주세요.</div>'; return;
+    }
+    const items=data.items.slice().sort((a,b)=>(Date.parse(b.pubDate)||0)-(Date.parse(a.pubDate)||0));   // 최신 보도부터
+    box.dataset.q=q;
+    $("pressTime").textContent=nowHM()+" 기준";
+    if(!items.length){ box.innerHTML='<div class="logempty">현재까지 보도내용 없음.</div>'; return; }
     box.innerHTML=items.slice(0,15).map(it=>{
       const when=fmtWhen(it.pubDate);
-      return `<a class="newsrow" href="${it.link}" target="_blank" rel="noopener">`+
+      return `<a class="newsrow" href="${escapeHtml(it.link||"#")}" target="_blank" rel="noopener">`+
         `<div class="nt">${escapeHtml(it.title)}</div>`+
         `<div class="nm">${it.source?`<span class="src">${escapeHtml(it.source)}</span>`:""}${when?`<span>${when}</span>`:""}</div></a>`;
     }).join("");
-    $("pressTime").textContent=nowHM()+" 기준";
-  }catch(e){ box.innerHTML='<div class="logempty">보도 검색에 실패했습니다.<br>잠시 후 다시 시도하세요.</div>'; }
+  }catch(e){ if(seq!==pressSeq) return; box.dataset.q=""; box.innerHTML='<div class="logempty">보도 검색에 실패했습니다.<br>잠시 후 다시 시도하세요.</div>'; }
 }
 
 // ── Firebase 실시간 공유 (조치사항·현재상황) ──

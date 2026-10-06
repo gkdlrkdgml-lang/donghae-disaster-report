@@ -11,8 +11,18 @@ window.KMA_KEY = "RQIEhSzZ3LYrBeZCv4a7aoFXCjqHzyHY0wLrF%2BTxE8QzvvkWxgE6G0AYGdg4
 // 예: "https://sms.donghae.go.kr" — 아래 따옴표 안에 실제 주소를 넣으세요. 비워두면 버튼이 안 보입니다.
 window.SMS_SYSTEM_URL = "";
 
-// 재난상황판 '실시간 뉴스' 기본 검색어
+// 재난상황판 '실시간 뉴스' 기본 검색어 ('네이버 열기' 버튼에 사용)
 window.NEWS_QUERY = "동해시 재난 사고 안전";
-// 뉴스 CORS 프록시 (브라우저에서 구글뉴스 RSS를 받기 위함). 비워두면 기본 프록시들을 순서대로 시도합니다.
-//  사내망에서 외부 프록시가 막히면, 여기에 쓸 수 있는 프록시 주소를 넣으세요. 예: "https://corsproxy.io/?url="
 window.NEWS_PROXY = "";
+
+// ───────────────────────────────────────────────────────────────
+// 재난상황판 '실시간 재난문자(긴급재난문자)' API 인증키
+//  · 공공데이터포털(data.go.kr) 또는 안전데이터(safetydata.go.kr)에서 발급받은 인증키를 넣으세요.
+//  · 아래 따옴표 안에 'Encoding(URL인코딩) 인증키'를 그대로 붙여넣으면 됩니다.
+//  · 신청: 공공데이터포털 → '행정안전부 긴급재난문자' 검색 → 활용신청 → 인증키
+//  · 비워두면 재난문자 목록 대신 안내가 표시됩니다.
+window.DISASTER_MSG_KEY = "";
+// 기본 조회 지역(부분일치). "강원" 또는 "동해" 등. 비우면 전국.
+window.DISASTER_MSG_REGION = "강원";
+// (고급) 재난문자 API 주소 — 기본값이 사내망에서 막히면 다른 주소로 교체 가능. 비우면 기본 후보들을 순서대로 시도.
+window.DISASTER_MSG_URL = "";

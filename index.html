@@ -112,26 +112,26 @@
   .topnav button{background:none;border:none;border-bottom:3px solid transparent;color:var(--dim);padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
   .topnav button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
   /* ░░ 재난상황판 (관제 보드형 — 화면을 꽉 채움) ░░ */
-  .board{display:grid;grid-template-columns:1.7fr 1fr;grid-template-rows:auto 1fr;gap:12px;
+  .board{display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:auto 1fr;gap:12px;
     padding:12px 16px;height:calc(100vh - 98px);box-sizing:border-box}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-  .panel>h3{margin:0;padding:11px 15px;font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);flex-shrink:0}
-  .panel>h3 .sub{margin-left:auto;font-size:11px;color:var(--dim);font-weight:600}
+  .panel>h3{margin:0;padding:12px 16px;font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .panel>h3 .sub{margin-left:auto;font-size:13px;color:var(--dim);font-weight:600}
   .panel .pbody{padding:12px 15px;overflow:auto;flex:1;min-height:0}
   /* 상단 요약 바 */
   .summary{grid-column:1 / -1;background:var(--panel);border:1px solid var(--line);border-radius:12px;
     display:flex;align-items:stretch;gap:0;overflow:hidden}
-  .sblk{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px 18px;border-right:1px solid var(--line)}
-  .sblk label{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.04em}
-  .sblk .sval{background:transparent;border:none;color:var(--ink);font-size:18px;font-weight:800;outline:none;font-family:inherit;padding:0;width:100%}
-  .sblk .sval::placeholder{color:#44566e;font-weight:600}
+  .sblk{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px 18px;border-right:1px solid var(--line)}
+  .sblk label{font-size:13px;color:var(--dim);font-weight:700;letter-spacing:.04em}
+  .sblk .sval{background:transparent;border:none;color:var(--ink);font-size:24px;font-weight:800;outline:none;font-family:inherit;padding:0;width:100%}
+  .sblk .sval::placeholder{color:#44566e;font-weight:600;font-size:18px}
   .sblk.grow{flex:1}
   .sblk.lvlblk{background:#0e1830}
-  .sblk select.sval{font-size:16px;cursor:pointer}
-  .sclock{margin-left:auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:12px 20px;border-right:none}
-  .sclock .ct{font-size:22px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1}
-  .sclock .cd{font-size:12px;color:var(--dim)}
-  .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:20px;font-weight:900;padding:7px 16px;border-radius:10px;white-space:nowrap}
+  .sblk select.sval{font-size:19px;cursor:pointer}
+  .sclock{margin-left:auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:12px 22px;border-right:none}
+  .sclock .ct{font-size:32px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1}
+  .sclock .cd{font-size:14px;color:var(--dim)}
+  .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:26px;font-weight:900;padding:8px 18px;border-radius:10px;white-space:nowrap}
   .lvl-0{background:#2a3647;color:#9fb4d4} .lvl-관심{background:#1c3a5a;color:#8fd0ff}
   .lvl-주의{background:#4a4210;color:#ffe08a} .lvl-경계{background:#5a3210;color:#ffb27a} .lvl-심각{background:#5a1518;color:#ff9a9c;animation:pulse 1.4s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #e5484d55}50%{box-shadow:0 0 0 7px #e5484d00}}
@@ -140,25 +140,31 @@
   .mappanel .pbody{padding:0;position:relative}
   #dashMapView{width:100%;height:100%}
   #dashMapMsg{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--dim);font-size:13px;padding:20px;pointer-events:none}
+  /* 지도 위 현재 기상 오버레이 */
+  #dashWx{position:absolute;top:10px;left:10px;right:10px;z-index:6;display:none;flex-wrap:wrap;gap:7px;align-items:center;
+    background:rgba(10,20,34,.85);border:1px solid #2a567e;border-radius:10px;padding:8px 12px}
+  .wxttl{font-size:15px;font-weight:800;color:#8fd0ff;margin-right:2px}
+  .wxchip{font-size:16px;font-weight:700;color:var(--ink);background:#0f2438;border:1px solid #1e3a52;border-radius:7px;padding:5px 11px;white-space:nowrap}
+  .wxtime{font-size:12.5px;color:var(--dim);margin-left:auto}
   /* 우측 패널 묶음 */
   .side{grid-row:2;grid-column:2;display:flex;flex-direction:column;gap:12px;min-height:0}
   .side .panel{flex:1;min-height:0}
-  .dbtn{background:var(--cyan);color:#04101F;border:none;border-radius:7px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
+  .dbtn{background:var(--cyan);color:#04101F;border:none;border-radius:7px;padding:10px 15px;font-weight:800;font-size:14.5px;cursor:pointer;font-family:inherit}
   .dbtn.ghost{background:#1b2838;color:var(--ink);border:1px solid var(--line)}
-  .dbtn.sm{padding:6px 11px;font-size:12px}
-  .logrow{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
-  .logrow .lt{font-size:12.5px;color:var(--cyan);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:2px}
-  .logrow .lx{font-size:13.5px;color:var(--ink);line-height:1.5;flex:1;outline:none;border-radius:4px;padding:2px 4px}
+  .dbtn.sm{padding:8px 12px;font-size:13.5px}
+  .logrow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+  .logrow .lt{font-size:16px;color:var(--cyan);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:1px}
+  .logrow .lx{font-size:17px;color:var(--ink);line-height:1.5;flex:1;outline:none;border-radius:4px;padding:2px 4px}
   .logrow .lx:focus{background:#0A1220;box-shadow:0 0 0 1px var(--cyan)}
-  .logrow .ld{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
+  .logrow .ld{background:none;border:none;color:var(--dim);cursor:pointer;font-size:19px;line-height:1;padding:2px 5px}
   .logrow .ld:hover{color:var(--red)}
-  .logempty{font-size:12.5px;color:var(--dim);padding:16px 10px;text-align:center;line-height:1.6}
-  .newsrow{display:block;padding:9px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+  .logempty{font-size:14.5px;color:var(--dim);padding:16px 10px;text-align:center;line-height:1.6}
+  .newsrow{display:block;padding:11px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
   .newsrow:hover .nt{color:var(--cyan)}
-  .newsrow .nt{font-size:13.5px;color:var(--ink);line-height:1.45;font-weight:600}
-  .newsrow .nm{font-size:11.5px;color:var(--dim);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+  .newsrow .nt{font-size:16px;color:var(--ink);line-height:1.45;font-weight:600}
+  .newsrow .nm{font-size:13px;color:var(--dim);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
   .newsrow .nm .src{color:#8fb8ff}
-  .dhint{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5}
+  .dhint{font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5}
   .ptools{display:flex;gap:6px;padding:9px 12px;border-top:1px solid var(--line);flex-shrink:0;flex-wrap:wrap;align-items:center}
   @media(max-width:1000px){.board{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto}
     .mappanel{grid-row:auto;grid-column:auto}.side{grid-row:auto;grid-column:auto}
@@ -170,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06e</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06g</span>
   </div>
 
   <div class="topnav">
@@ -392,6 +398,7 @@
         <button class="dbtn ghost sm" style="margin-left:auto" onclick="dashMapShow()">📍 위치 표시</button></h3>
       <div class="pbody">
         <div id="dashMapView"></div>
+        <div id="dashWx"></div>
         <div id="dashMapMsg">발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다.</div>
       </div>
     </div>
@@ -399,11 +406,11 @@
     <!-- 우측: 조치사항 + 뉴스 -->
     <div class="side">
       <!-- 상황 일지 -->
-      <div class="panel">
+      <div class="panel" style="flex:1.7">
         <h3>📝 상황 일지 · 조치사항 <span class="sub" id="syncBadge" style="color:#7b8da6">PC 개별 저장</span><span class="sub" id="logCount" style="margin-left:8px"></span></h3>
         <div class="pbody" id="logList"></div>
         <div class="ptools">
-          <input id="logInput" style="flex:1;min-width:120px;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font-size:13px;outline:none;font-family:inherit" placeholder="조치 내용 입력 후 Enter">
+          <input id="logInput" style="flex:1;min-width:120px;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:15.5px;outline:none;font-family:inherit" placeholder="조치 내용 입력 후 Enter">
           <button class="dbtn sm" onclick="addLog()">＋ 추가</button>
           <button class="dbtn ghost sm" onclick="copyLog()">📋 복사</button>
           <button class="dbtn ghost sm" onclick="clearLog()">전체삭제</button>
@@ -414,7 +421,7 @@
         <h3>🚨 실시간 재난문자 <span class="sub" id="dmTime"></span></h3>
         <div class="pbody" id="dmList"><div class="logempty">행정안전부 긴급재난문자 실시간 목록입니다.<br>새로고침을 누르면 불러옵니다.</div></div>
         <div class="ptools">
-          <select id="dmRegion" style="background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font-size:13px;outline:none;font-family:inherit">
+          <select id="dmRegion" style="background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 11px;font-size:14.5px;outline:none;font-family:inherit">
             <option value="강원">강원</option><option value="동해">동해시</option><option value="">전국</option>
           </select>
           <button class="dbtn sm" onclick="fetchDisasterMsg()">🔄 새로고침</button>
@@ -1488,6 +1495,35 @@ function dashMapCoords(lat,lng,label){
   if(!dashMap){ dashMap=new kakao.maps.Map($("dashMapView"),{center:pos,level:4}); dashMarker=new kakao.maps.Marker({position:pos}); dashMarker.setMap(dashMap); }
   else { dashMarker.setPosition(pos); }
   setTimeout(()=>{ if(dashMap){ dashMap.relayout(); dashMap.setCenter(pos); } }, 80);
+  dashWeather(lat,lng);   // 지도 위 현재 기상 표시
+}
+// 지도 위 현재 기상 오버레이 (기상청 초단기실황)
+async function dashWeather(lat,lng){
+  const ov=$("dashWx"); if(!ov) return;
+  const key=window.KMA_KEY||""; if(!key){ ov.style.display="none"; return; }
+  const g=kmaGrid(lat,lng);
+  const d=new Date(); let dd=new Date(d); if(d.getMinutes()<45) dd=new Date(d.getTime()-3600000);
+  const p=n=>String(n).padStart(2,"0");
+  const bd=`${dd.getFullYear()}${p(dd.getMonth()+1)}${p(dd.getDate())}`, bt=`${p(dd.getHours())}00`;
+  const url=`https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?serviceKey=${key}&numOfRows=100&pageNo=1&dataType=JSON&base_date=${bd}&base_time=${bt}&nx=${g.nx}&ny=${g.ny}`;
+  ov.style.display="flex"; ov.innerHTML='<span class="wxttl">🌦 현재 기상</span><span style="color:var(--dim);font-size:12px">조회 중…</span>';
+  try{
+    const res=await fetch(url); const j=await res.json();
+    const items=((j.response||{}).body||{}).items; if(!items||!items.item) throw 0;
+    const v={}; items.item.forEach(it=>v[it.category]=it.obsrValue);
+    const extra=await fetchVilage(g.nx,g.ny,key);
+    const fl=feelsLike(v.T1H,v.REH,v.WSD);
+    const chip=(ic,val)=>`<span class="wxchip">${ic} ${val}</span>`;
+    let h="";
+    if(v.T1H!==undefined) h+=chip("🌡",v.T1H+"℃");
+    if(fl!==null) h+=chip("체감",fl+"℃");
+    h+=chip("☁",PTY[v.PTY]||"-");
+    if(extra&&extra.POP!==undefined) h+=chip("☂",extra.POP+"%");
+    if(v.WSD!==undefined) h+=chip("🌬",v.WSD+"m/s"+(v.VEC!==undefined?" "+windDir(v.VEC):""));
+    if(v.REH!==undefined) h+=chip("💧",v.REH+"%");
+    if(extra&&extra.WAV!==undefined&&extra.WAV!==""&&extra.WAV!=="-99") h+=chip("🌊",extra.WAV+"m");
+    ov.innerHTML=`<span class="wxttl">🌦 현재 기상</span>${h}<span class="wxtime">${bd.slice(4,6)}.${bd.slice(6,8)} ${bt.slice(0,2)}시</span>`;
+  }catch(e){ ov.style.display="none"; }
 }
 function dashMapShow(){
   const q=($("dsPlace").value||"").trim();

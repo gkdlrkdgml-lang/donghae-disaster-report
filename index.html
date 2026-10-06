@@ -1282,26 +1282,33 @@ function geocodeDonghae(query, onFound, onFail){
   }
   if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ onFail&&onFail("nokakao"); return; }
   const hasCity=/동해시/.test(base);
-  const cands = hasCity ? [base] : ["강원특별자치도 동해시 "+base, "강원도 동해시 "+base, "동해시 "+base, base];
+  // 결과가 동해시인지 확인 (다른 지역 동명 주소 오인 방지)
+  const is동해=(r)=>/동해/.test([r.address_name, r.road_address_name,
+      (r.road_address&&r.road_address.address_name), (r.address&&r.address.address_name)].filter(Boolean).join(" "));
+  // 주소검색 후보: 반드시 시 이름을 붙여 '동해시' 결과만 나오게 (맨 끝 bare는 넣지 않음)
+  const addrCands = hasCity ? [base] : ["강원특별자치도 동해시 "+base, "강원도 동해시 "+base, "동해시 "+base];
+  // 키워드(장소)검색 후보: 카카오맵처럼 입력 그대로도 시도
+  const kwCands   = hasCity ? [base] : ["동해시 "+base, base, "동해 "+base];
   const geo=new kakao.maps.services.Geocoder();
-  // 장소(POI) 키워드 검색 — 카카오맵처럼 입력 그대로도 시도
-  const kwCands = hasCity ? [base, base.replace(/동해시\s*/,"")] : ["동해시 "+base, base, "동해 "+base];
   const tryKw=(j)=>{
     if(j>=kwCands.length){ onFail&&onFail("notfound"); return; }
     const ps=new kakao.maps.services.Places();
     ps.keywordSearch(kwCands[j], function(data, st){
       if(st===kakao.maps.services.Status.OK && data.length){
-        // 동해시 결과 우선, 없으면 첫 결과
-        const d=data.filter(x=>/동해/.test((x.road_address_name||"")+(x.address_name||"")))[0]||data[0];
-        onFound(parseFloat(d.y), parseFloat(d.x));
-      }else{ tryKw(j+1); }
+        const d=data.filter(is동해)[0];           // 동해시 결과만 채택
+        if(d){ onFound(parseFloat(d.y), parseFloat(d.x)); return; }
+      }
+      tryKw(j+1);
     });
   };
   const tryAddr=(i)=>{
-    if(i>=cands.length){ tryKw(0); return; }   // 주소 실패 → 키워드 검색으로
-    geo.addressSearch(cands[i], function(result, status){
-      if(status===kakao.maps.services.Status.OK && result.length){ onFound(parseFloat(result[0].y), parseFloat(result[0].x)); }
-      else { tryAddr(i+1); }
+    if(i>=addrCands.length){ tryKw(0); return; }   // 주소 실패 → 키워드 검색으로
+    geo.addressSearch(addrCands[i], function(result, status){
+      if(status===kakao.maps.services.Status.OK && result.length){
+        const d=result.filter(is동해)[0]||(hasCity?result[0]:null);   // 동해시 결과만
+        if(d){ onFound(parseFloat(d.y), parseFloat(d.x)); return; }
+      }
+      tryAddr(i+1);
     });
   };
   tryAddr(0);

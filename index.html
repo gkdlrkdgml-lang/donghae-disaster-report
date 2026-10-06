@@ -106,7 +106,40 @@
   .foot{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.6}
   .adv{margin-top:11px;border-top:1px solid var(--line);padding-top:11px}
   .adv summary{font-size:12px;color:var(--dim);cursor:pointer}
-  @media print{body{background:#fff}.topbar,.col-left,.actions,.subact,.cbs,.foot,.adv{display:none}.wrap{padding:0}.paper{box-shadow:none;padding:0}}
+  @media print{body{background:#fff}.topbar,.col-left,.actions,.subact,.cbs,.foot,.adv,.topnav{display:none}.wrap{padding:0}.paper{box-shadow:none;padding:0}}
+  /* 상단 페이지 탭 (보고서 생성 / 재난상황판) */
+  .topnav{display:flex;gap:4px;padding:0 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .topnav button{background:none;border:none;border-bottom:3px solid transparent;color:var(--dim);padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .topnav button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+  /* 재난상황판 대시보드 */
+  .dash{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px;align-items:start}
+  @media(max-width:900px){.dash{grid-template-columns:1fr}}
+  .dcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .dcard h3{margin:0 0 12px;font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .dcard h3 .sub{margin-left:auto;font-size:11px;color:var(--dim);font-weight:400}
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .dfield{display:flex;flex-direction:column;gap:4px}
+  .dfield label{font-size:11px;color:var(--dim);font-weight:700}
+  .dfield input,.dfield select{background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font-size:13px;outline:none;font-family:inherit}
+  .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:4px 12px;border-radius:999px}
+  .lvl-0{background:#2a3647;color:#9fb4d4} .lvl-관심{background:#1c3a5a;color:#8fd0ff}
+  .lvl-주의{background:#3a3410;color:#ffe08a} .lvl-경계{background:#4a2a10;color:#ffb27a} .lvl-심각{background:#4a1518;color:#ff9a9c}
+  .dbtn{background:var(--cyan);color:#04101F;border:none;border-radius:7px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
+  .dbtn.ghost{background:#1b2838;color:var(--ink);border:1px solid var(--line)}
+  .dbtn.sm{padding:6px 11px;font-size:12px}
+  .logrow{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+  .logrow .lt{font-size:12px;color:var(--cyan);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:2px}
+  .logrow .lx{font-size:13px;color:var(--ink);line-height:1.55;flex:1;outline:none;border-radius:4px;padding:2px 4px}
+  .logrow .lx:focus{background:#0A1220;box-shadow:0 0 0 1px var(--cyan)}
+  .logrow .ld{background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px}
+  .logrow .ld:hover{color:var(--red)}
+  .logempty{font-size:12.5px;color:var(--dim);padding:14px 0;text-align:center}
+  .newsrow{display:block;padding:10px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+  .newsrow:hover .nt{color:var(--cyan)}
+  .newsrow .nt{font-size:13.5px;color:var(--ink);line-height:1.5;font-weight:600}
+  .newsrow .nm{font-size:11.5px;color:var(--dim);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
+  .newsrow .nm .src{color:#8fb8ff}
+  .dhint{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -117,7 +150,12 @@
     <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06</span>
   </div>
 
-  <div class="wrap">
+  <div class="topnav">
+    <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
+    <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
+  </div>
+
+  <div class="wrap" id="pageReport">
     <div class="col-left">
       <div class="card">
         <div class="lab">상황전파 메시지 붙여넣기</div>
@@ -312,6 +350,58 @@
     </div>
   </div>
 
+  <!-- ░░░ 재난상황판 대시보드 ░░░ -->
+  <div class="dash" id="pageDash" style="display:none">
+    <!-- 현재 상황 -->
+    <div class="dcard" style="grid-column:1 / -1">
+      <h3>🚨 현재 상황 <span class="sub" id="dashClock"></span></h3>
+      <div class="dgrid">
+        <div class="dfield"><label>상황명 · 유형</label><input id="dsType" placeholder="예: 천곡동 아파트 화재"></div>
+        <div class="dfield"><label>발생장소</label><input id="dsPlace" placeholder="예: 동해시 천곡동 ○○아파트"></div>
+        <div class="dfield"><label>발생일시</label><input id="dsTime" placeholder="예: 2026. 10. 6.(화) 10:24"></div>
+        <div class="dfield"><label>대응단계</label>
+          <select id="dsLevel">
+            <option value="0">상황없음</option><option>관심</option><option>주의</option><option>경계</option><option>심각</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
+        <button class="dbtn ghost sm" onclick="pullFromReport()">📄 보고서에서 가져오기</button>
+        <span id="dsLevelPill" class="lvl-pill lvl-0">● 상황없음</span>
+        <span class="dhint" style="margin:0 0 0 auto">입력 내용은 이 브라우저에 자동 저장됩니다.</span>
+      </div>
+    </div>
+
+    <!-- 상황 일지 / 조치사항 -->
+    <div class="dcard">
+      <h3>📝 상황 일지 · 조치사항 <span class="sub" id="logCount"></span></h3>
+      <textarea id="logInput" class="fa" style="min-height:58px;background:#0A1220;color:var(--ink);border-color:var(--line)" placeholder="조치 내용을 입력하고 Ctrl+Enter 또는 '기록 추가'를 누르세요.&#10;예: 소방 현장 도착, 인명 대피 시작"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="dbtn" onclick="addLog()">＋ 기록 추가</button>
+        <button class="dbtn ghost sm" onclick="copyLog()">📋 일지 복사</button>
+        <button class="dbtn ghost sm" style="margin-left:auto" onclick="clearLog()">전체 지우기</button>
+      </div>
+      <div id="logList" style="margin-top:12px"></div>
+      <div class="dhint">각 줄의 내용을 클릭하면 바로 수정할 수 있습니다. 시각은 기록 추가 시점으로 자동 입력됩니다.</div>
+    </div>
+
+    <!-- 실시간 뉴스 -->
+    <div class="dcard">
+      <h3>📰 관련 실시간 뉴스 <span class="sub" id="newsTime"></span></h3>
+      <div style="display:flex;gap:8px">
+        <input id="newsQuery" class="dfield" style="flex:1;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font-size:13px;outline:none;font-family:inherit" placeholder="검색어 (예: 동해시 재난 사고)">
+        <button class="dbtn sm" onclick="fetchNews()">🔄 새로고침</button>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">
+        <button class="dbtn ghost sm" onclick="setNewsQuery('동해시 재난 사고 안전')">동해시</button>
+        <button class="dbtn ghost sm" onclick="setNewsQuery('강원 재난 사고')">강원</button>
+        <button class="dbtn ghost sm" onclick="newsFromSituation()">현재 상황으로</button>
+      </div>
+      <div id="newsList" style="margin-top:12px"><div class="logempty">새로고침을 누르면 관련 뉴스를 불러옵니다.</div></div>
+      <div class="dhint">구글 뉴스 검색 기준. 5분마다 자동 새로고침되며, 제목을 누르면 기사로 이동합니다. (인터넷 연결 필요)</div>
+    </div>
+  </div>
+
 <script>
 // 데이터 파일을 매번 최신으로 로드 (브라우저 캐시 방지 — 새로고침만 해도 반영됨)
 (function(){
@@ -454,22 +544,20 @@ function parseMessage(text){
 const CBS=window.CBS_TEMPLATES||[];
 let cbsRegion="○○지역", cbsTime="○○:○○", cbsFacility="", cbsLen=90;
 function fillCBS(t){
+  const region=cbsRegion||"동해시";
   let out=(t||"")
     .replace(/\[@?기관명@?\]|\[사용기관명\]/g,"[동해시]")
-    .replace(/○○:○○/, cbsTime)
-    .replace(/○○시 ○○구 ○○동|○○\(시군구\),?\s*○○\(읍면동\)|○○시 ○○동|○○지역/g, cbsRegion);
-  // 신고내역의 시설/장소명을 건물·산·강·업체·저수지·댐 자리표시자에 반영
+    .replace(/○○:○○/g, cbsTime);
+  // ① 시설/장소 슬롯 (신고내역에서 확인된 경우에만 치환)
   if(cbsFacility){
     out=out
-      .replace(/○○건물/g, cbsFacility)
-      .replace(/○○산/g, cbsFacility)
-      .replace(/○○업체/g, cbsFacility)
-      .replace(/○○저수지/g, cbsFacility)
-      .replace(/○○댐/g, cbsFacility)
-      .replace(/○○강/g, cbsFacility)
-      .replace(/○○\(으\)로|○○일대/g, cbsFacility+" 일대");
+      .replace(/○○건물|○○업체|○○산|○○저수지|○○댐|○○강/g, cbsFacility)
+      .replace(/○○\s*일대|○○\(으\)로/g, cbsFacility+" 일대")
+      .replace(/\(○○\)/g, cbsFacility);
   }
-  return out;
+  // ② 지역 슬롯은 항상 채움 (긴 패턴 먼저 — '○○시 ○○동'이 '○○시 ○○'보다 앞)
+  out=out.replace(/○○시\s*○○구\s*○○동|○○\(시군구\),?\s*○○\(읍면동\)|○○시\s*○○동|○○시\s*○○|○○지역/g, region);
+  return out.replace(/\s{2,}/g," ").trim();
 }
 function byteLen(s){let b=0;for(const ch of s){b+=ch.charCodeAt(0)>127?2:1;}return b;}
 function renderCBS(){
@@ -1037,8 +1125,10 @@ function prefillJihwi(type, dateStr, place, detail, prog){
   const m=(dateStr||"").match(/\d{4}\.\s*(\d{1,2})\.\s*(\d{1,2})\.(?:\s*\([^)]*\))?\s*(\d{1,2}:\d{2})?/);
   if(m){ $("jDate").value=`${String(m[1]).padStart(2,"0")}.${String(m[2]).padStart(2,"0")}.${m[3]?(" "+m[3]):""}`; }
   if(place){ $("jPlace").value=place.replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시\s*/,""); }
-  // 상황보고: 신고내역을 보고서체로 정리
-  $("jSit").value=cleanSit(detail, jt);
+  // 상황보고: 화재·폭발 등 '현장 묘사형'만 신고내역에서 정제(cleanSit),
+  //  그 외(산악·수난·승강기·심정지·교통 등)는 유형별 표준 문구를 사용해 오인(예: '시설물 전도')을 방지
+  const CUE=/화재|폭발|붕괴|침수|유해화학/;
+  $("jSit").value = CUE.test(type) ? cleanSit(detail, jt) : ((JI.types[jt]||{}).sit || cleanSit(detail, jt));
   // 조치사항: 1보 = 진행상황 기반(실제 수준)
   $("jAct").value=act1bo(jt);
   renderJihwi();
@@ -1304,6 +1394,149 @@ showMsgTab("cbs");
 renderCBS();        // 기본 재난문자 1건 표시
 fillIncidentDefaults();
 renderJihwi();       // 지휘부 기본 문구 표시
+
+// ══════════════ 재난상황판 대시보드 ══════════════
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d;}catch(e){return d;}},
+          set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+let newsTimer=null;
+
+function showPage(p){
+  const dash=p==="dash";
+  $("pageReport").style.display=dash?"none":"";
+  $("pageDash").style.display=dash?"grid":"none";
+  $("navReport").classList.toggle("on",!dash);
+  $("navDash").classList.toggle("on",dash);
+  if(dash){
+    // 처음 진입 시 뉴스 자동 로드 + 5분 자동 새로고침
+    if(!$("newsList").dataset.loaded){ fetchNews(); }
+    if(!newsTimer){ newsTimer=setInterval(()=>{ if($("pageDash").style.display!=="none") fetchNews(); }, 300000); }
+  }
+}
+
+// ── 현재 상황 (localStorage 저장) ──
+function saveSit(){
+  LS.set("dh_sit",{type:$("dsType").value,place:$("dsPlace").value,time:$("dsTime").value,level:$("dsLevel").value});
+  renderLevelPill();
+}
+function loadSit(){
+  const s=LS.get("dh_sit",{});
+  if(s.type!=null)$("dsType").value=s.type||"";
+  if(s.place!=null)$("dsPlace").value=s.place||"";
+  if(s.time!=null)$("dsTime").value=s.time||"";
+  if(s.level!=null)$("dsLevel").value=s.level||"0";
+  renderLevelPill();
+}
+function renderLevelPill(){
+  const v=$("dsLevel").value; const p=$("dsLevelPill");
+  p.className="lvl-pill lvl-"+(v==="0"?"0":v);
+  p.textContent="● "+(v==="0"?"상황없음":v+" 단계");
+}
+function pullFromReport(){
+  // 보고서 생성 화면에서 입력된 값을 끌어옴
+  const type=($("f_title").value.match(/\]\s*동해시.*?\s(\S+)\s*상황보고서/)||[])[1]||"";
+  $("dsType").value=($("f_title").value||"").replace(/^\[[^\]]*\]\s*/,"").replace(/\s*상황보고서$/,"")||$("dsType").value;
+  if($("f_jangso").value)$("dsPlace").value=$("f_jangso").value;
+  if($("f_ilsi").value)$("dsTime").value=$("f_ilsi").value;
+  saveSit();
+  showMsgLite("보고서 내용을 가져왔습니다.");
+}
+function showMsgLite(t){ /* 간단 알림 */ console.log(t); }
+
+// ── 상황 일지 / 조치사항 ──
+function getLogs(){ return LS.get("dh_log",[]); }
+function setLogs(a){ LS.set("dh_log",a); renderLog(); }
+function nowHM(){ const d=new Date(),p=n=>String(n).padStart(2,"0"); return `${p(d.getHours())}:${p(d.getMinutes())}`; }
+function addLog(){
+  const t=$("logInput").value.trim(); if(!t)return;
+  const logs=getLogs(); logs.unshift({t:nowHM(), x:t, id:Date.now()}); setLogs(logs);
+  $("logInput").value=""; $("logInput").focus();
+}
+function delLog(id){ setLogs(getLogs().filter(l=>l.id!==id)); }
+function editLog(id,txt){ const logs=getLogs(); const l=logs.find(x=>x.id===id); if(l){ l.x=txt; LS.set("dh_log",logs); } }
+function renderLog(){
+  const logs=getLogs(); const box=$("logList");
+  $("logCount").textContent=logs.length?`${logs.length}건`:"";
+  if(!logs.length){ box.innerHTML='<div class="logempty">아직 기록이 없습니다. 조치 내용을 추가하세요.</div>'; return; }
+  box.innerHTML=logs.map(l=>
+    `<div class="logrow"><span class="lt">${l.t}</span>`+
+    `<span class="lx" contenteditable="true" data-id="${l.id}">${escapeHtml(l.x)}</span>`+
+    `<button class="ld" title="삭제" onclick="delLog(${l.id})">×</button></div>`).join("");
+  box.querySelectorAll(".lx").forEach(el=>{
+    el.addEventListener("blur",()=>editLog(+el.dataset.id, el.textContent.trim()));
+  });
+}
+function clearLog(){ if(getLogs().length && confirm("상황 일지를 모두 지울까요?")) setLogs([]); }
+function copyLog(){
+  const logs=getLogs(); if(!logs.length){ return; }
+  const head=`[${$("dsType").value||"상황 일지"}] ${$("dsPlace").value||""}`.trim();
+  const body=logs.slice().reverse().map(l=>`${l.t}  ${l.x}`).join("\n");
+  const txt=(head?head+"\n":"")+body;
+  navigator.clipboard.writeText(txt).then(()=>{ const b=event.target; const o=b.textContent; b.textContent="복사됨 ✓"; setTimeout(()=>b.textContent=o,1200); });
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ── 실시간 뉴스 (구글 뉴스 RSS + CORS 프록시) ──
+function setNewsQuery(q){ $("newsQuery").value=q; LS.set("dh_newsq",q); fetchNews(); }
+function newsFromSituation(){
+  const type=$("dsType").value.trim(); const place=$("dsPlace").value.replace(/^(강원특별자치도|강원도)\s*/,"").trim();
+  const q=[ "동해", type.split(/\s+/).pop()||"", "사고" ].filter(Boolean).join(" ");
+  setNewsQuery(q||"동해시 재난 사고");
+}
+async function fetchNews(){
+  const list=$("newsList");
+  const q=($("newsQuery").value.trim())||(window.NEWS_QUERY||"동해시 재난 사고 안전");
+  LS.set("dh_newsq",q);
+  list.dataset.loaded="1";
+  list.innerHTML='<div class="logempty">뉴스를 불러오는 중…</div>';
+  const rss="https://news.google.com/rss/search?q="+encodeURIComponent(q)+"&hl=ko&gl=KR&ceid=KR:ko";
+  const proxies=[ (window.NEWS_PROXY||""), "https://api.allorigins.win/raw?url=", "https://corsproxy.io/?url=" ].filter(Boolean);
+  for(const px of proxies){
+    try{
+      const res=await fetch(px+encodeURIComponent(rss),{cache:"no-store"});
+      if(!res.ok) continue;
+      const txt=await res.text();
+      const xml=new DOMParser().parseFromString(txt,"text/xml");
+      const items=[...xml.querySelectorAll("item")];
+      if(!items.length) continue;
+      renderNews(items.slice(0,15));
+      $("newsTime").textContent=nowHM()+" 기준";
+      return;
+    }catch(e){ /* 다음 프록시 시도 */ }
+  }
+  // 전부 실패 → 수동 링크 안내
+  list.innerHTML=`<div class="logempty">뉴스를 불러오지 못했습니다(네트워크/차단).<br>`+
+    `<a href="https://news.google.com/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR" target="_blank" style="color:var(--cyan)">구글 뉴스에서 직접 열기 ↗</a></div>`;
+}
+function renderNews(items){
+  const list=$("newsList");
+  list.innerHTML=items.map(it=>{
+    const get=t=>{ const e=it.querySelector(t); return e?e.textContent:""; };
+    let title=get("title"), link=get("link");
+    const src=(it.getElementsByTagName("source")[0]||{}).textContent||"";
+    // 구글 뉴스 제목은 "제목 - 매체명" 형태 → 매체명 분리
+    let t=title, m=src;
+    const dash=title.lastIndexOf(" - ");
+    if(!m && dash>0){ m=title.slice(dash+3); t=title.slice(0,dash); }
+    else if(m && title.endsWith(" - "+m)){ t=title.slice(0, title.length-m.length-3); }
+    const pub=get("pubDate"); let when="";
+    if(pub){ const d=new Date(pub); if(!isNaN(d)){ const p=n=>String(n).padStart(2,"0"); when=`${d.getMonth()+1}.${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; } }
+    return `<a class="newsrow" href="${link}" target="_blank" rel="noopener">`+
+      `<div class="nt">${escapeHtml(t)}</div>`+
+      `<div class="nm">${m?`<span class="src">${escapeHtml(m)}</span>`:""}${when?`<span>${when}</span>`:""}</div></a>`;
+  }).join("");
+}
+
+// ── 대시보드 초기화 ──
+(function initDash(){
+  loadSit();
+  ["dsType","dsPlace","dsTime"].forEach(id=>$(id).addEventListener("input",saveSit));
+  $("dsLevel").addEventListener("change",saveSit);
+  $("logInput").addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="Enter") addLog(); });
+  $("newsQuery").value=LS.get("dh_newsq", (window.NEWS_QUERY||"동해시 재난 사고 안전"));
+  renderLog();
+  const tick=()=>{ const d=new Date(),p=n=>String(n).padStart(2,"0"); $("dashClock").textContent=`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+  tick(); setInterval(tick,1000);
+})();
 </script>
 </body>
 </html>

@@ -147,7 +147,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06b</span>
   </div>
 
   <div class="topnav">
@@ -372,6 +372,14 @@
       </div>
     </div>
 
+    <!-- 발생위치 지도 -->
+    <div class="dcard" style="grid-column:1 / -1">
+      <h3>🗺 발생위치 지도 <span class="sub" id="dashMapAddr"></span>
+        <button class="dbtn ghost sm" style="margin-left:auto" onclick="dashMapShow()">📍 지도 표시</button></h3>
+      <div id="dashMapView" style="width:100%;height:360px;border-radius:8px;display:none"></div>
+      <div id="dashMapMsg" class="dhint">발생장소를 입력하고 '지도 표시'를 누르거나, '보고서에서 가져오기'를 하면 위치가 표시됩니다.</div>
+    </div>
+
     <!-- 상황 일지 / 조치사항 -->
     <div class="dcard">
       <h3>📝 상황 일지 · 조치사항 <span class="sub" id="logCount"></span></h3>
@@ -387,18 +395,19 @@
 
     <!-- 실시간 뉴스 -->
     <div class="dcard">
-      <h3>📰 관련 실시간 뉴스 <span class="sub" id="newsTime"></span></h3>
+      <h3>📰 관련 실시간 뉴스 (네이버) <span class="sub" id="newsTime"></span></h3>
       <div style="display:flex;gap:8px">
         <input id="newsQuery" class="dfield" style="flex:1;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:8px 10px;font-size:13px;outline:none;font-family:inherit" placeholder="검색어 (예: 동해시 재난 사고)">
         <button class="dbtn sm" onclick="fetchNews()">🔄 새로고침</button>
       </div>
       <div style="display:flex;gap:7px;margin-top:8px;flex-wrap:wrap">
-        <button class="dbtn ghost sm" onclick="setNewsQuery('동해시 재난 사고 안전')">동해시</button>
+        <button class="dbtn ghost sm" onclick="setNewsQuery('동해시 재난 사고')">동해시</button>
         <button class="dbtn ghost sm" onclick="setNewsQuery('강원 재난 사고')">강원</button>
         <button class="dbtn ghost sm" onclick="newsFromSituation()">현재 상황으로</button>
+        <button class="dbtn ghost sm" style="margin-left:auto;background:#1f3a1f;color:#8fe0a6;border-color:#2e7d32" onclick="openNaver()">네이버에서 열기 ↗</button>
       </div>
-      <div id="newsList" style="margin-top:12px"><div class="logempty">새로고침을 누르면 관련 뉴스를 불러옵니다.</div></div>
-      <div class="dhint">구글 뉴스 검색 기준. 5분마다 자동 새로고침되며, 제목을 누르면 기사로 이동합니다. (인터넷 연결 필요)</div>
+      <div id="newsList" style="margin-top:12px"><div class="logempty">새로고침을 누르면 네이버 뉴스를 불러옵니다.</div></div>
+      <div class="dhint">네이버 뉴스 검색 기준(최신순). 5분마다 자동 새로고침, 제목을 누르면 기사로 이동합니다. 관제실 망에서 목록이 안 뜨면 '네이버에서 열기'로 바로 보실 수 있습니다.</div>
     </div>
   </div>
 
@@ -1208,6 +1217,7 @@ function applySearchedPlace(p, display){
 // ── 발생 위치 지도 ──
 let kakaoMap=null, kakaoMarker=null;
 function showMapByCoords(lat,lng,label){
+  window.__reportCoords={lat,lng,label:label||""};  // 대시보드 지도에서 재사용
   if(!window.__kakaoReady||!window.kakao||!kakao.maps){ return; }
   $("mapCard").style.display="block";
   $("mapView").style.display="block";
@@ -1410,6 +1420,8 @@ function showPage(p){
     // 처음 진입 시 뉴스 자동 로드 + 5분 자동 새로고침
     if(!$("newsList").dataset.loaded){ fetchNews(); }
     if(!newsTimer){ newsTimer=setInterval(()=>{ if($("pageDash").style.display!=="none") fetchNews(); }, 300000); }
+    // 장소가 있으면 지도 표시
+    setTimeout(dashMapShow, 120);
   }
 }
 
@@ -1433,14 +1445,43 @@ function renderLevelPill(){
 }
 function pullFromReport(){
   // 보고서 생성 화면에서 입력된 값을 끌어옴
-  const type=($("f_title").value.match(/\]\s*동해시.*?\s(\S+)\s*상황보고서/)||[])[1]||"";
   $("dsType").value=($("f_title").value||"").replace(/^\[[^\]]*\]\s*/,"").replace(/\s*상황보고서$/,"")||$("dsType").value;
   if($("f_jangso").value)$("dsPlace").value=$("f_jangso").value;
   if($("f_ilsi").value)$("dsTime").value=$("f_ilsi").value;
   saveSit();
-  showMsgLite("보고서 내용을 가져왔습니다.");
+  // 보고서에서 좌표가 넘어왔으면 그 좌표로, 아니면 장소명으로 지도 표시
+  if(window.__reportCoords){ dashMapCoords(window.__reportCoords.lat, window.__reportCoords.lng, $("dsPlace").value); }
+  else { dashMapShow(); }
 }
-function showMsgLite(t){ /* 간단 알림 */ console.log(t); }
+
+// ── 대시보드 지도 (카카오) ──
+let dashMap=null, dashMarker=null;
+function dashMapCoords(lat,lng,label){
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps){ $("dashMapMsg").textContent="지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."; $("dashMapView").style.display="none"; return; }
+  $("dashMapView").style.display="block"; $("dashMapMsg").textContent="";
+  $("dashMapAddr").textContent=label||$("dsPlace").value||"";
+  const pos=new kakao.maps.LatLng(lat,lng);
+  if(!dashMap){ dashMap=new kakao.maps.Map($("dashMapView"),{center:pos,level:4}); dashMarker=new kakao.maps.Marker({position:pos}); dashMarker.setMap(dashMap); }
+  else { dashMarker.setPosition(pos); }
+  setTimeout(()=>{ if(dashMap){ dashMap.relayout(); dashMap.setCenter(pos); } }, 80);
+}
+function dashMapShow(){
+  const q=($("dsPlace").value||"").trim();
+  if(!q){ $("dashMapMsg").textContent="발생장소를 입력하고 '지도 표시'를 누르세요."; $("dashMapView").style.display="none"; return; }
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ $("dashMapMsg").textContent="지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."; return; }
+  const addrOnly=q.replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();
+  const geo=new kakao.maps.services.Geocoder();
+  geo.addressSearch(addrOnly,function(r,s){
+    if(s===kakao.maps.services.Status.OK && r.length){ dashMapCoords(+r[0].y,+r[0].x,q); }
+    else {
+      const ps=new kakao.maps.services.Places();
+      ps.keywordSearch(/동해/.test(q)?q:("동해시 "+q),function(d,st){
+        if(st===kakao.maps.services.Status.OK && d.length){ const x=d.filter(e=>/동해시/.test((e.road_address_name||"")+(e.address_name||"")))[0]||d[0]; dashMapCoords(+x.y,+x.x,q); }
+        else { $("dashMapMsg").textContent="지도에서 위치를 찾지 못했습니다. 장소를 확인하세요."; $("dashMapView").style.display="none"; }
+      });
+    }
+  });
+}
 
 // ── 상황 일지 / 조치사항 ──
 function getLogs(){ return LS.get("dh_log",[]); }
@@ -1482,48 +1523,66 @@ function newsFromSituation(){
   const q=[ "동해", type.split(/\s+/).pop()||"", "사고" ].filter(Boolean).join(" ");
   setNewsQuery(q||"동해시 재난 사고");
 }
+function naverUrl(q){ return "https://search.naver.com/search.naver?where=news&sort=1&query="+encodeURIComponent(q); }
+function openNaver(){ window.open(naverUrl(($("newsQuery").value.trim())||(window.NEWS_QUERY||"동해시 재난 사고")),"_blank","noopener"); }
+function newsProxies(){ return [ (window.NEWS_PROXY||""), "https://api.allorigins.win/raw?url=", "https://corsproxy.io/?url=" ].filter(Boolean); }
+function fmtWhen(pub){ if(!pub)return""; const d=new Date(pub); if(isNaN(d))return""; const p=n=>String(n).padStart(2,"0"); return `${d.getMonth()+1}.${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
 async function fetchNews(){
   const list=$("newsList");
-  const q=($("newsQuery").value.trim())||(window.NEWS_QUERY||"동해시 재난 사고 안전");
+  const q=($("newsQuery").value.trim())||(window.NEWS_QUERY||"동해시 재난 사고");
   LS.set("dh_newsq",q);
   list.dataset.loaded="1";
-  list.innerHTML='<div class="logempty">뉴스를 불러오는 중…</div>';
+  list.innerHTML='<div class="logempty">네이버 뉴스를 불러오는 중…</div>';
+  const proxies=newsProxies();
+  // ① 네이버 뉴스 검색(HTML) 파싱
+  for(const px of proxies){
+    try{
+      const res=await fetch(px+encodeURIComponent(naverUrl(q)),{cache:"no-store"});
+      if(!res.ok) continue;
+      const items=parseNaver(await res.text());
+      if(items.length){ renderNews(items.slice(0,15)); $("newsTime").textContent=nowHM()+" · 네이버"; return; }
+    }catch(e){}
+  }
+  // ② 구글 뉴스 RSS 폴백
   const rss="https://news.google.com/rss/search?q="+encodeURIComponent(q)+"&hl=ko&gl=KR&ceid=KR:ko";
-  const proxies=[ (window.NEWS_PROXY||""), "https://api.allorigins.win/raw?url=", "https://corsproxy.io/?url=" ].filter(Boolean);
   for(const px of proxies){
     try{
       const res=await fetch(px+encodeURIComponent(rss),{cache:"no-store"});
       if(!res.ok) continue;
-      const txt=await res.text();
-      const xml=new DOMParser().parseFromString(txt,"text/xml");
-      const items=[...xml.querySelectorAll("item")];
-      if(!items.length) continue;
-      renderNews(items.slice(0,15));
-      $("newsTime").textContent=nowHM()+" 기준";
-      return;
-    }catch(e){ /* 다음 프록시 시도 */ }
+      const xml=new DOMParser().parseFromString(await res.text(),"text/xml");
+      const its=[...xml.querySelectorAll("item")].map(it=>{
+        const g=t=>{const e=it.querySelector(t);return e?e.textContent:"";};
+        let title=g("title"); const src=(it.getElementsByTagName("source")[0]||{}).textContent||"";
+        let t=title,m=src; const d=title.lastIndexOf(" - ");
+        if(!m&&d>0){m=title.slice(d+3);t=title.slice(0,d);} else if(m&&title.endsWith(" - "+m)){t=title.slice(0,title.length-m.length-3);}
+        return {title:t,link:g("link"),press:m,when:fmtWhen(g("pubDate"))};
+      });
+      if(its.length){ renderNews(its.slice(0,15)); $("newsTime").textContent=nowHM()+" · 구글"; return; }
+    }catch(e){}
   }
-  // 전부 실패 → 수동 링크 안내
-  list.innerHTML=`<div class="logempty">뉴스를 불러오지 못했습니다(네트워크/차단).<br>`+
-    `<a href="https://news.google.com/search?q=${encodeURIComponent(q)}&hl=ko&gl=KR" target="_blank" style="color:var(--cyan)">구글 뉴스에서 직접 열기 ↗</a></div>`;
+  // ③ 전부 실패 → 네이버 바로 열기 안내
+  list.innerHTML=`<div class="logempty">뉴스를 자동으로 불러오지 못했습니다.<br>관제실 망에서 외부 접속이 차단되었을 수 있습니다.<br><br>`+
+    `<a href="${naverUrl(q)}" target="_blank" style="color:#8fe0a6;font-weight:700;font-size:14px">네이버 뉴스에서 열기 ↗</a></div>`;
+}
+function parseNaver(html){
+  try{
+    const doc=new DOMParser().parseFromString(html,"text/html");
+    let as=[...doc.querySelectorAll("a.news_tit")];
+    if(!as.length) as=[...doc.querySelectorAll("a[class*='news_tit'], a[href*='news.naver'], a.tit")];
+    return as.map(a=>{
+      const area=a.closest(".news_area,.news_wrap,.bx,li,div")||doc;
+      const press=(area.querySelector("a.info.press,.info.press,.press,.sub_txt")||{}).textContent||"";
+      const when=([...area.querySelectorAll(".info")].map(e=>(e.textContent||"").trim()).find(t=>/분\s*전|시간\s*전|일\s*전|어제|\d+\.\d+\./.test(t)))||"";
+      return {title:(a.getAttribute("title")||a.textContent||"").trim(), link:a.href||a.getAttribute("href")||"", press:(press||"").trim(), when:when};
+    }).filter(x=>x.title&&x.link);
+  }catch(e){ return []; }
 }
 function renderNews(items){
-  const list=$("newsList");
-  list.innerHTML=items.map(it=>{
-    const get=t=>{ const e=it.querySelector(t); return e?e.textContent:""; };
-    let title=get("title"), link=get("link");
-    const src=(it.getElementsByTagName("source")[0]||{}).textContent||"";
-    // 구글 뉴스 제목은 "제목 - 매체명" 형태 → 매체명 분리
-    let t=title, m=src;
-    const dash=title.lastIndexOf(" - ");
-    if(!m && dash>0){ m=title.slice(dash+3); t=title.slice(0,dash); }
-    else if(m && title.endsWith(" - "+m)){ t=title.slice(0, title.length-m.length-3); }
-    const pub=get("pubDate"); let when="";
-    if(pub){ const d=new Date(pub); if(!isNaN(d)){ const p=n=>String(n).padStart(2,"0"); when=`${d.getMonth()+1}.${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; } }
-    return `<a class="newsrow" href="${link}" target="_blank" rel="noopener">`+
-      `<div class="nt">${escapeHtml(t)}</div>`+
-      `<div class="nm">${m?`<span class="src">${escapeHtml(m)}</span>`:""}${when?`<span>${when}</span>`:""}</div></a>`;
-  }).join("");
+  $("newsList").innerHTML=items.map(it=>
+    `<a class="newsrow" href="${it.link}" target="_blank" rel="noopener">`+
+    `<div class="nt">${escapeHtml(it.title)}</div>`+
+    `<div class="nm">${it.press?`<span class="src">${escapeHtml(it.press)}</span>`:""}${it.when?`<span>${escapeHtml(it.when)}</span>`:""}</div></a>`).join("");
 }
 
 // ── 대시보드 초기화 ──

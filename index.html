@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06h</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06i</span>
   </div>
 
   <div class="topnav">
@@ -480,6 +480,18 @@ function makeTitle(bo, training, addr, type){
     .replace(/^강원특별자치도\s*/,"").replace(/^강원도\s*/,"").replace(/^동해시\s*/,"").trim();
   const pre=(training?"[훈련] ":"")+`[${bo||"1"}보]`;
   return `${pre} 동해시 ${addrShort} ${type||""} 상황보고서`.replace(/\s+/g," ").trim();
+}
+// 상황판 '상황유형' 표기용 — 소방 [재난분류]의 세부유형(건물화재·공장화재 등)을 우선 사용, 없으면 감지 유형
+function pickDisplayType(raw, dtype){
+  // 재난분류 줄에서 'XX-세부유형' 또는 'XX/세부유형'의 세부유형(한글) 추출
+  const m=(raw||"").match(/재난분류[^\n]*?[-\/]\s*([가-힣]+)\s*$/m) || (raw||"").match(/재난분류[^\n]*?[-\/]\s*([가-힣]+)/);
+  const sub=m?m[1]:"";
+  if(sub){
+    if(sub==="기타화재") return "화재";
+    if(/화재/.test(sub)) return sub;              // 건물화재·공장화재·주택화재·차량화재·임야화재 등
+    // 그 외(산악·수난·교통 등)는 감지 유형이 더 자연스러움(산악사고 등)
+  }
+  return dtype||"";
 }
 
 // ── 메시지 파서 ──
@@ -928,6 +940,7 @@ async function generate(){
     const R=parseTraining(raw);
     const trTime=R.ilsi?hhmm(R.ilsi):"○○:○○";
     trainState={ilsi:R.ilsi,time:trTime,jangsoTmpl:R.jangsoTmpl,gaeyoTmpl:R.gaeyoTmpl,actionTmpl:R.actionTmpl,type:R.type};
+    window.__reportType=R.type||"";
     setTraining(true);
     $("f_reportNo").value=""; $("reportNo").value="";
     $("f_ilsi").value=R.ilsi?fmtDateTime(R.ilsi):"";
@@ -960,6 +973,7 @@ async function generate(){
   const dtype=R.dtype||(R.incident||"").replace(/발생$/,"");
   const locShort=R.balsaeng?R.balsaeng.replace(/^강원(특별자치)?도\s*/,"").replace(/동해시\s*/,""):"";
   const title=makeTitle(R.bo, R.training, jangso, dtype);
+  window.__reportType=pickDisplayType(raw, dtype);   // 상황판 '상황유형'용 — 세부유형(건물화재 등) 반영
 
   setTraining(R.training);
   $("f_reportNo").value=R.bo||""; $("reportNo").value=R.bo||"";
@@ -1474,8 +1488,8 @@ function renderLevelPill(){
   p.textContent="● "+(v==="0"?"상황없음":v+" 단계");
 }
 function pullFromReport(){
-  // 보고서 생성 화면에서 입력된 값을 끌어옴
-  $("dsType").value=($("f_title").value||"").replace(/^\[[^\]]*\]\s*/,"").replace(/\s*상황보고서$/,"")||$("dsType").value;
+  // 상황유형: 유형만 간결하게(건물화재·산악사고 등). 주소는 발생장소 칸에 별도 표시.
+  $("dsType").value=window.__reportType||$("dsType").value;
   if($("f_jangso").value)$("dsPlace").value=$("f_jangso").value;
   if($("f_ilsi").value)$("dsTime").value=$("f_ilsi").value;
   saveSit();

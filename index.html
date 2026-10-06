@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06l</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06n</span>
   </div>
 
   <div class="topnav">
@@ -1271,24 +1271,34 @@ function showMapByCoords(lat,lng,label){
 }
 // 동해시 주소/장소 → 좌표. 도로명만 입력해도 동해시를 자동으로 붙여 여러 형태로 시도.
 function geocodeDonghae(query, onFound, onFail){
-  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ onFail&&onFail("nokakao"); return; }
   const base=(query||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();  // (시설명) 제거
   if(!base){ onFail&&onFail("empty"); return; }
+  // ① 수동 지정 좌표(MANUAL_PINS) 우선 — 카카오가 못 찾는 주소 대응
+  const pins=window.MANUAL_PINS||{};
+  for(const k of Object.keys(pins)){
+    if(k && base.replace(/\s+/g,"").includes(k.replace(/\s+/g,""))){
+      const p=pins[k]; if(p && p.lat && p.lng){ onFound(+p.lat, +p.lng); return; }
+    }
+  }
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ onFail&&onFail("nokakao"); return; }
   const hasCity=/동해시/.test(base);
   const cands = hasCity ? [base] : ["강원특별자치도 동해시 "+base, "강원도 동해시 "+base, "동해시 "+base, base];
   const geo=new kakao.maps.services.Geocoder();
+  // 장소(POI) 키워드 검색 — 카카오맵처럼 입력 그대로도 시도
+  const kwCands = hasCity ? [base, base.replace(/동해시\s*/,"")] : ["동해시 "+base, base, "동해 "+base];
+  const tryKw=(j)=>{
+    if(j>=kwCands.length){ onFail&&onFail("notfound"); return; }
+    const ps=new kakao.maps.services.Places();
+    ps.keywordSearch(kwCands[j], function(data, st){
+      if(st===kakao.maps.services.Status.OK && data.length){
+        // 동해시 결과 우선, 없으면 첫 결과
+        const d=data.filter(x=>/동해/.test((x.road_address_name||"")+(x.address_name||"")))[0]||data[0];
+        onFound(parseFloat(d.y), parseFloat(d.x));
+      }else{ tryKw(j+1); }
+    });
+  };
   const tryAddr=(i)=>{
-    if(i>=cands.length){
-      // 주소 실패 → 장소(POI) 키워드 검색
-      const ps=new kakao.maps.services.Places();
-      ps.keywordSearch(hasCity?base:("동해시 "+base), function(data, st){
-        if(st===kakao.maps.services.Status.OK && data.length){
-          const d=data.filter(x=>/동해시/.test((x.road_address_name||"")+(x.address_name||"")))[0]||data[0];
-          onFound(parseFloat(d.y), parseFloat(d.x));
-        }else{ onFail&&onFail("notfound"); }
-      });
-      return;
-    }
+    if(i>=cands.length){ tryKw(0); return; }   // 주소 실패 → 키워드 검색으로
     geo.addressSearch(cands[i], function(result, status){
       if(status===kakao.maps.services.Status.OK && result.length){ onFound(parseFloat(result[0].y), parseFloat(result[0].x)); }
       else { tryAddr(i+1); }

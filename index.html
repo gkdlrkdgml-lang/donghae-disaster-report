@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06i</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.06j</span>
   </div>
 
   <div class="topnav">
@@ -1567,7 +1567,7 @@ function addLog(){
   const t=$("logInput").value.trim(); if(!t)return;
   const entry={t:nowHM(), x:t, ts:Date.now()};
   if(fbReady){ fbDB.ref("logs").push(entry); }   // 실시간 공유
-  else { const logs=getLogs(); logs.unshift({...entry, id:Date.now()}); setLogs(logs); }
+  else { const logs=getLogs(); logs.push({...entry, id:Date.now()}); setLogs(logs); }
   $("logInput").value=""; $("logInput").focus();
 }
 function delLog(id){
@@ -1579,7 +1579,9 @@ function editLog(id,txt){
   else { const logs=getLogs(); const l=logs.find(x=>String(x.id)===String(id)); if(l){ l.x=txt; LS.set("dh_log",logs); } }
 }
 function renderLog(){
-  const logs=activeLogs(); const box=$("logList");
+  // 과거가 위, 최신이 아래로 쌓이도록 시간순(오름차순) 정렬
+  const logs=activeLogs().slice().sort((a,b)=>((a.ts||+a.id||0)-(b.ts||+b.id||0)));
+  const box=$("logList");
   $("logCount").textContent=logs.length?`${logs.length}건`:"";
   if(!logs.length){ box.innerHTML='<div class="logempty">아직 기록이 없습니다. 조치 내용을 추가하세요.</div>'; return; }
   box.innerHTML=logs.map(l=>
@@ -1589,6 +1591,7 @@ function renderLog(){
   box.querySelectorAll(".lx").forEach(el=>{
     el.addEventListener("blur",()=>editLog(el.dataset.id, el.textContent.trim()));
   });
+  box.scrollTop=box.scrollHeight;   // 최신(맨 아래)이 보이도록 자동 스크롤
 }
 function clearLog(){
   if(!activeLogs().length) return;
@@ -1598,7 +1601,7 @@ function clearLog(){
 function copyLog(){
   const logs=activeLogs(); if(!logs.length){ return; }
   const head=`[${$("dsType").value||"상황 일지"}] ${$("dsPlace").value||""}`.trim();
-  const body=logs.slice().reverse().map(l=>`${l.t}  ${l.x}`).join("\n");
+  const body=logs.slice().sort((a,b)=>((a.ts||+a.id||0)-(b.ts||+b.id||0))).map(l=>`${l.t}  ${l.x}`).join("\n");
   const txt=(head?head+"\n":"")+body;
   navigator.clipboard.writeText(txt).then(()=>{ const b=event.target; const o=b.textContent; b.textContent="복사됨 ✓"; setTimeout(()=>b.textContent=o,1200); });
 }
@@ -1759,7 +1762,7 @@ async function initFirebase(){
     // 조치사항 실시간 구독
     fbDB.ref("logs").on("value",snap=>{
       const v=snap.val()||{};
-      fbLogs=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>b.ts-a.ts);
+      fbLogs=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts);
       renderLog();
     });
     // 현재 상황 실시간 구독

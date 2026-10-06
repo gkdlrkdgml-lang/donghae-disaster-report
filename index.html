@@ -388,10 +388,12 @@ function parseMessage(text){
   R.dtype=(titleLine.match(/\[([^\]]+)\]/)||[])[1]||"";
   // [고층건물]·[훈련] 등 유형이 아닌 괄호는 걸러내고, 유형규칙으로 재감지
   const TY=(window.DISASTER_TYPES||[]);
-  // 대괄호 양식은 [재난분류] 값을 유형 감지의 우선 힌트로 사용
-  const classifyText=bracket?(grab("재난분류")+" "+text):text;
-  const byRule=(TY.find(([re])=>re.test(classifyText))||[])[1]||"";
-  const KNOWN=/화재|산불|산사태|폭발|붕괴|침수|호우|태풍|강풍|대설|지진|교통|폭염|한파|유해|정전|터널|낙상|추락/;
+  const findTy=(s)=>(TY.find(([re])=>re.test(s||""))||[])[1]||"";
+  // 유형 감지 우선순위: ① [재난분류] 값(대괄호형) 또는 제목줄(콜론형) → ② 본문 전체
+  //  (짧고 명확한 분류/제목을 먼저 봐서 본문의 안내문구에 오인되지 않도록)
+  let byRule=findTy(bracket?grab("재난분류"):titleLine);
+  if(!byRule) byRule=findTy(text);
+  const KNOWN=/화재|산불|산사태|산악|수난|폭발|붕괴|침수|호우|태풍|강풍|대설|지진|교통|폭염|한파|유해|정전|터널|낙상|추락|승강기|심정지|벌집|개방/;
   if(bracket || !R.dtype || R.dtype==="훈련" || !KNOWN.test(R.dtype)){ R.dtype=byRule||R.dtype; }
   R.training=/\[훈련\]|훈련상황|훈련\s*상황전파/.test(text);
   R.singoIlsi=normDT(grab("신고일시")); R.prog=grab("진행상황"); R.balsinIlsi=normDT(grab("발신일시"));
@@ -488,9 +490,19 @@ function initCbsSelect(){
 function selectCBSForType(dtype, addr){
   const hay=(dtype||"")+" "+(addr||"");
   let mi=CBS.findIndex(c=>c.kw.test(hay));
-  const matched=mi>=0; if(mi<0)mi=0;
-  $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
+  const matched=mi>=0;
   const n=$("cbsNotice");
+  $("cbsCard").style.display="block";
+  // 개별 구급·구조·생활안전 유형: 시민 재난문자 대상이 아님 → 화재 문안 자동채움 막고 안내만
+  const NONPUBLIC=/심정지|승강기|벌집|문\s*개방|추락|낙상/;
+  if(!matched && NONPUBLIC.test(dtype||"")){
+    $("cbsSelect").value=0; $("cbsText").value=""; updateCbsCnt();
+    n.style.display="block";
+    n.textContent=`ℹ '${dtype}' 유형은 개별 구조·구급 상황이라 보통 시민 재난문자 대상이 아닙니다. 발송이 필요하면 위에서 유형을 직접 선택하세요.`;
+    return;
+  }
+  if(mi<0)mi=0;
+  $("cbsSelect").value=mi; renderCBS();
   if(!matched){
     n.style.display="block";
     n.textContent=`⚠ '${dtype||"이 유형"}'에 맞는 표준 재난문자가 없어 임시로 '${CBS[0].name}' 문안이 선택되었습니다. 유형을 직접 고르거나 문구를 수정해 발송하세요.`;
@@ -1013,7 +1025,10 @@ function prefillJihwi(type, dateStr, place, detail, prog){
   // 재난유형 → 지휘부 유형 매핑
   const map={"화재":"화재","폭발":"화재","산불":"산불","산사태":"붕괴","붕괴":"붕괴",
     "침수":"침수","호우·침수":"침수","유해화학물질":"유해화학물질","정전":"정전",
-    "교통사고":"교통사고","터널화재":"화재","지진":"지진","폭염·온열질환":"기타"};
+    "교통사고":"교통사고","터널화재":"화재","지진":"지진","폭염·온열질환":"기타",
+    "산악사고":"산악사고","수난사고":"수난/익수","차량화재":"차량화재",
+    "승강기 갇힘":"승강기 갇힘","심정지":"심정지","추락사고":"낙상/추락",
+    "벌집 제거":"벌집 제거","문 개방":"문 개방"};
   const jt=map[type]||"기타";
   if(JI.types[jt]){ $("jType").value=jt; }
   $("jStage").value="1보";

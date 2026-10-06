@@ -290,6 +290,7 @@
         <div class="stage-head"><span class="stage-num">3</span><span class="stage-title">📣 시민 재난문자</span><span class="stage-tag">3순위</span></div>
         <div class="stage-body">
           <div class="cbs" id="cbsCard">
+            <div id="cbsNotice" style="display:none;margin:0 0 8px;padding:7px 10px;border-radius:6px;background:#5a3a1a;color:#ffd9a8;font-size:13px;line-height:1.5"></div>
             <select id="cbsSelect"></select>
             <div class="cbs-tabs">
               <button id="tab90" class="on">긴급 90자</button>
@@ -479,6 +480,18 @@ function updateCbsCnt(){
 function initCbsSelect(){
   $("cbsSelect").innerHTML=CBS.map((c,i)=>`<option value="${i}">${c.name}</option>`).join("");
 }
+// 유형에 맞는 재난문자 표준문안 선택. 매칭 실패 시 화재로 조용히 떨어지지 않고 안내 표시.
+function selectCBSForType(dtype, addr){
+  const hay=(dtype||"")+" "+(addr||"");
+  let mi=CBS.findIndex(c=>c.kw.test(hay));
+  const matched=mi>=0; if(mi<0)mi=0;
+  $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
+  const n=$("cbsNotice");
+  if(!matched){
+    n.style.display="block";
+    n.textContent=`⚠ '${dtype||"이 유형"}'에 맞는 표준 재난문자가 없어 임시로 '${CBS[0].name}' 문안이 선택되었습니다. 유형을 직접 고르거나 문구를 수정해 발송하세요.`;
+  }else{ n.style.display="none"; n.textContent=""; }
+}
 
 // ── 동해시 관내 실제 장소·주소 (훈련 ○○ 자동 치환용) ──
 const DONGHAE=window.LOCATIONS||[];
@@ -539,8 +552,7 @@ function applyTrainLoc(loc){
   $("trainLocText").textContent=loc.addr;
   // 재난문자도 이 장소로
   cbsRegion=`동해시 ${loc.dong}`; cbsFacility=loc.place;
-  const hay=S.type+" "+loc.addr; let mi=CBS.findIndex(c=>c.kw.test(hay)); if(mi<0)mi=0;
-  $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
+  selectCBSForType(S.type, loc.addr);
   $("msgTabs").style.display="flex";
   prefillJihwi(S.type, $("f_ilsi").value, loc.addr);
 }
@@ -832,9 +844,7 @@ async function generate(){
   cbsRegion=("동해시 "+locShort).trim()||"동해시";
   cbsTime=R.singoIlsi?hhmm(R.singoIlsi):"○○:○○";
   cbsFacility=R.facility||"";
-  const hay=(dtype||"")+" "+(jangso||"")+" "+(R.prog||"");
-  let mi=CBS.findIndex(c=>c.kw.test(hay)); if(mi<0)mi=0;
-  $("cbsSelect").value=mi; $("cbsCard").style.display="block"; renderCBS();
+  selectCBSForType(dtype, (jangso||"")+" "+(R.prog||""));
   $("msgTabs").style.display="flex";
   prefillJihwi(dtype, ilsi, jangso, R.detail, R.prog);
 

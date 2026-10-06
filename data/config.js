@@ -9,4 +9,10 @@ window.KMA_KEY = "RQIEhSzZ3LYrBeZCv4a7aoFXCjqHzyHY0wLrF%2BTxE8QzvvkWxgE6G0AYGdg4
 
 // 문자전송시스템 주소 (지휘부 안내문자 '문자전송시스템 열기' 버튼이 이 주소를 새 창으로 엽니다)
 // 예: "https://sms.donghae.go.kr" — 아래 따옴표 안에 실제 주소를 넣으세요. 비워두면 버튼이 안 보입니다.
-window.SMS_SYSTEM_URL = "http://106.4.2.218/system/login";
+window.SMS_SYSTEM_URL = "";
+
+// 재난상황판 '실시간 뉴스' 기본 검색어
+window.NEWS_QUERY = "동해시 재난 사고 안전";
+// 뉴스 CORS 프록시 (브라우저에서 구글뉴스 RSS를 받기 위함). 비워두면 기본 프록시들을 순서대로 시도합니다.
+//  사내망에서 외부 프록시가 막히면, 여기에 쓸 수 있는 프록시 주소를 넣으세요. 예: "https://corsproxy.io/?url="
+window.NEWS_PROXY = "";

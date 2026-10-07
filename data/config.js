@@ -4,6 +4,15 @@
 // 카카오 지도 JavaScript 키 (도메인 github.io에 묶임)
 window.KAKAO_JS_KEY = "8bd60a8c16ef9f53b458b92b46753125";
 
+// 카카오가 못 찾는 주소를 직접 좌표로 지정 (상황판·보고서 지도에서 우선 적용)
+//  · 입력한 장소에 아래 '키워드'가 포함되면 그 좌표로 바로 표시합니다.
+//  · 좌표 찾는 법: map.kakao.com 에서 위치를 찾아 우클릭 → '이 위치의 좌표 복사'
+//    또는 주소 검색 후 주소를 우클릭. (위도=lat, 경도=lng)
+//  · 예시처럼 "키워드": {lat: 위도, lng: 경도} 형태로 추가하세요.
+window.MANUAL_PINS = {
+  // "부두안길 20": { lat: 37.5500, lng: 129.1150 },   // ← 실제 좌표로 바꿔서 주석(//) 지우고 사용
+};
+
 // 기상청 단기예보 인증키 (공공데이터포털 · Encoding 키, 이미 URL 인코딩됨)
 window.KMA_KEY = "RQIEhSzZ3LYrBeZCv4a7aoFXCjqHzyHY0wLrF%2BTxE8QzvvkWxgE6G0AYGdg4myIHIdTYtgCXEvpXk0CvTEnzmw%3D%3D";
 
@@ -23,7 +32,7 @@ window.NEWS_PROXY = "";
 //  · 비워두면 재난문자 목록 대신 안내가 표시됩니다.
 window.DISASTER_MSG_KEY = "H8650I4B948RTDJW";
 // 기본 조회 지역(부분일치). "강원" 또는 "동해" 등. 비우면 전국.
-window.DISASTER_MSG_REGION = "강원";
+window.DISASTER_MSG_REGION = "동해";
 // (고급) 재난문자 API 주소 — 기본값이 사내망에서 막히면 다른 주소로 교체 가능. 비우면 기본 후보들을 순서대로 시도.
 window.DISASTER_MSG_URL = "";
 // 재난문자 중계(구글 앱스스크립트) 주소 — safetydata가 CORS로 막힐 때 사용.

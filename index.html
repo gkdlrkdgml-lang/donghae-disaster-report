@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07c</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07g</span>
   </div>
 
   <div class="topnav">
@@ -652,6 +652,45 @@ function selectCBSForType(dtype, addr){
 // ── 동해시 관내 실제 장소·주소 (훈련 ○○ 자동 치환용) ──
 const DONGHAE=window.LOCATIONS||[];
 function pickLoc(){return DONGHAE[Math.floor(Math.random()*DONGHAE.length)];}
+// 훈련 상황개요 내용에 맞는 '장소 유형'을 골라 배정 (아파트→아파트, 산악→산/계곡, 일반건물→건물류 등)
+const NATURE_RE=/산$|봉$|계곡|해변|해수욕장|동굴|항$|부두|댐|저수지|무릉|두타|바위|촛대/;  // 자연지형
+const NONBLDG_RE=/산$|봉$|계곡|해변|해수욕장|동굴|항$|부두|댐|저수지|무릉|두타|바위|촛대|공원|캠핑|터널|국도|주유소|충전소|lpg|lng|수소/i;  // '건물'에서 제외(자연·야외·시설)
+function trainVenueRe(text){
+  const t=text||"";
+  const INC=[
+    [/주유소|충전소|주유|가스\s*충전|lpg|lng|수소\s*충전|유증기/i, /주유소|충전소|가스충전|lpg|lng|수소/i],
+    [/터널/, /터널/],
+    [/아파트|공동주택|단지/, /아파트|빌|타워|센트로빌|주공|스위첸|현대|상가아파트/],
+    [/요양|병원|환자|응급실/, /병원|요양/],
+    [/해수욕장|해변|바닷가|피서/, /해수욕장|해변|바위|촛대/],
+    [/항\b|부두|선박|어선|방파제|물양장/, /항|부두/],
+    [/계곡|무릉|야영|캠핑/, /계곡/],
+    [/등산|등반|산악|능선|정상|입산|하산/, /산$|봉$|계곡|사$|무릉|두타/],
+    [/학교|대학|교실|학생/, /학교|대학|중학|고교|초교/],
+    [/공장|사업장|산업|제조|용광로|변전/, /공장|산업|양회|발전/],
+    [/경기장|운동장|체육|대회|관중/, /경기장|운동장|체육|레포츠/],
+    [/시장|상가|점포|마트|백화/, /시장|상가|마트|시네마/],
+    [/터미널|기차|열차|역사/, /터미널|역/],
+    [/댐|저수지|방류/, /댐|저수지/],
+    [/동굴/, /동굴/],
+  ];
+  for(const [sc,pl] of INC){ if(sc.test(t)) return {inc:pl}; }
+  // 일반 '건물/시설물/상가/고층/지하/주택' → 자연·야외·시설 제외하고 건물류에서 배정
+  if(/건물|시설물?|상가|점포|사무실|청사|회관|센터|빌딩|고층|지하|주차장|주택/.test(t)) return {exc:NONBLDG_RE};
+  return null;
+}
+// 훈련용 장소 뽑기 — venue 필터가 있으면 맞는 장소에서, 없으면 전체에서
+function pickTrainLoc(){
+  const v=trainState&&trainState.venue;
+  let pool=DONGHAE;
+  if(v){
+    let f;
+    if(v.inc) f=DONGHAE.filter(l=>v.inc.test(l.place||""));
+    else if(v.exc) f=DONGHAE.filter(l=>!v.exc.test(l.place||""));
+    if(f&&f.length) pool=f;
+  }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
 function fillTrain(t, loc, mtnType){
   let out=(t||"")
     .replace(/훈련\s*아파트/g, loc.place||"훈련아파트")   // '훈련아파트' → 배정된 실제 장소명
@@ -692,6 +731,7 @@ function parseTraining(text){
   const hits=TRAIN_TYPES.map(([re,name])=>{ const m=scanText.match(re); return m?{name,idx:m.index}:null; }).filter(Boolean);
   hits.sort((a,b)=>a.idx-b.idx);
   R.type=hits.length?hits[0].name:"훈련 상황";
+  R.venue=trainVenueRe(scanText);   // 상황개요 내용에 맞는 장소 유형
   return R;
 }
 
@@ -971,7 +1011,7 @@ async function generate(){
   if(isTrain){
     const R=parseTraining(raw);
     const trTime=R.ilsi?hhmm(R.ilsi):"○○:○○";
-    trainState={ilsi:R.ilsi,time:trTime,jangsoTmpl:R.jangsoTmpl,gaeyoTmpl:R.gaeyoTmpl,actionTmpl:R.actionTmpl,type:R.type};
+    trainState={ilsi:R.ilsi,time:trTime,jangsoTmpl:R.jangsoTmpl,gaeyoTmpl:R.gaeyoTmpl,actionTmpl:R.actionTmpl,type:R.type,venue:R.venue};
     window.__reportType=R.type||"";
     setTraining(true);
     $("f_reportNo").value=""; $("reportNo").value="";
@@ -979,7 +1019,7 @@ async function generate(){
     $("f_sihaeng").value=nowStr(); $("f_jeopsu").value=R.ilsi?fmtDateTime(R.ilsi):nowStr();
     $("reporterLine").style.display="none";
     cbsTime=trTime;
-    const loc=pickLoc(); applyTrainLoc(loc);
+    const loc=pickTrainLoc(); applyTrainLoc(loc);
     $("trainLoc").style.display="block";
     const t=["훈련 메시지"]; if(R.ilsi)t.push("사고일시"); t.push(R.type); t.push("상황개요 자동작성");
     $("tags").innerHTML=t.map(x=>`<span class="tag">✓ ${x}</span>`).join("");
@@ -1462,7 +1502,7 @@ $("copyBtn").addEventListener("click",copyReport);
 $("printBtn").addEventListener("click",()=>window.print());
 $("hwpxFormBtn").addEventListener("click",downloadHwpxForm);
 $("docBtn").addEventListener("click",downloadDoc);
-$("rerollBtn").addEventListener("click",()=>{if(trainState)applyTrainLoc(pickLoc());});
+$("rerollBtn").addEventListener("click",()=>{if(trainState)applyTrainLoc(pickTrainLoc());});
 $("f_jangso").addEventListener("change",e=>{const v=e.target.value.trim(); if(v) showMapByQuery(v, v);});
 $("cbsSelect").addEventListener("change",renderCBS);
 $("cbsText").addEventListener("input",updateCbsCnt);

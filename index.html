@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07g</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07h</span>
   </div>
 
   <div class="topnav">
@@ -201,6 +201,11 @@
         <div id="trainLoc" style="display:none;margin-top:10px;font-size:12px;color:var(--cyan);background:#0a1a2a;border:1px solid #1e3a52;border-radius:8px;padding:8px 10px;line-height:1.5">
           📍 훈련 장소 자동 적용: <b id="trainLocText"></b>
           <button id="rerollBtn" style="margin-left:6px;background:#123;border:1px solid var(--cyan);color:var(--cyan);border-radius:5px;padding:2px 9px;font-size:11px;cursor:pointer;font-family:inherit">🔀 다른 장소</button>
+          <div style="margin-top:7px">
+            주 상황유형:
+            <select id="trainTypeSel" style="background:#0a1a2a;border:1px solid var(--cyan);color:var(--cyan);border-radius:5px;padding:3px 7px;font-size:12px;font-family:inherit;cursor:pointer"></select>
+            <span style="color:var(--dim);font-size:11px">← 복합재난이면 핵심 유형으로 바꾸면 재난문자·지휘부가 다시 작성됩니다</span>
+          </div>
         </div>
         <div class="msg" id="msg"></div>
         <details class="adv">
@@ -737,9 +742,18 @@ function parseTraining(text){
 
 // 훈련 상태(전역): 장소 재추첨용
 let trainState=null; // {ilsi, jangsoTmpl, gaeyoTmpl, actionTmpl, type}
+// 훈련 '주 상황유형' 드롭다운 채우기 + 현재 유형으로 선택 (복합재난 수동 지정용)
+function syncTrainTypeSel(){
+  const sel=$("trainTypeSel"); if(!sel) return;
+  const names=(TRAIN_TYPES||[]).map(x=>x[1]);
+  const cur=(trainState&&trainState.type)||"";
+  const opts=[...names]; if(cur && opts.indexOf(cur)<0) opts.unshift(cur);  // 미매칭(훈련 상황 등)도 포함
+  sel.innerHTML=opts.map(n=>`<option value="${n}"${n===cur?" selected":""}>${n}</option>`).join("");
+}
 function applyTrainLoc(loc){
   if(!trainState)return;
   const S=trainState;
+  S.curLoc=loc;   // 유형만 바꿀 때 같은 장소로 다시 적용하기 위해 보관
   const mtnType=/산불|산사태/.test(S.type);
   // 사고장소: 실제 도로명 주소를 그대로 사용
   $("f_jangso").value=loc.addr;
@@ -1020,6 +1034,7 @@ async function generate(){
     $("reporterLine").style.display="none";
     cbsTime=trTime;
     const loc=pickTrainLoc(); applyTrainLoc(loc);
+    syncTrainTypeSel();
     $("trainLoc").style.display="block";
     const t=["훈련 메시지"]; if(R.ilsi)t.push("사고일시"); t.push(R.type); t.push("상황개요 자동작성");
     $("tags").innerHTML=t.map(x=>`<span class="tag">✓ ${x}</span>`).join("");
@@ -1502,7 +1517,14 @@ $("copyBtn").addEventListener("click",copyReport);
 $("printBtn").addEventListener("click",()=>window.print());
 $("hwpxFormBtn").addEventListener("click",downloadHwpxForm);
 $("docBtn").addEventListener("click",downloadDoc);
-$("rerollBtn").addEventListener("click",()=>{if(trainState)applyTrainLoc(pickTrainLoc());});
+$("rerollBtn").addEventListener("click",()=>{if(trainState){applyTrainLoc(pickTrainLoc());syncTrainTypeSel();}});
+$("trainTypeSel").addEventListener("change",function(){
+  if(!trainState)return;
+  trainState.type=this.value;
+  window.__reportType=this.value;          // 상황판 '상황유형'도 갱신
+  applyTrainLoc(trainState.curLoc||pickTrainLoc());   // 같은 장소로 재난문자·지휘부·제목 다시 작성
+  showMsg("주 상황유형을 '"+this.value+"'로 바꿔 재난문자·지휘부 상황보고를 다시 작성했습니다.","warn");
+});
 $("f_jangso").addEventListener("change",e=>{const v=e.target.value.trim(); if(v) showMapByQuery(v, v);});
 $("cbsSelect").addEventListener("change",renderCBS);
 $("cbsText").addEventListener("input",updateCbsCnt);

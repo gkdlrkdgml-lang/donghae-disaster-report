@@ -176,7 +176,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07c</span>
   </div>
 
   <div class="topnav">
@@ -654,7 +654,8 @@ const DONGHAE=window.LOCATIONS||[];
 function pickLoc(){return DONGHAE[Math.floor(Math.random()*DONGHAE.length)];}
 function fillTrain(t, loc, mtnType){
   let out=(t||"")
-    .replace(/○○시\s*\(군,?\s*구?\)|○○시\s*\(군\)|○○\(시군구\)|○○시군구|○○시\/군/g,"동해시")
+    .replace(/훈련\s*아파트/g, loc.place||"훈련아파트")   // '훈련아파트' → 배정된 실제 장소명
+    .replace(/○○시\s*\(군,?\s*구?\)|○○시\s*\(군\)|○○\(시군구\)|○○시군구|○○시\/군|○○시/g,"동해시")
     .replace(/○○구\s*\(읍,?\s*면,?\s*동\)|○○읍|○○면|○○동/g, loc.dong);
   if(mtnType && loc.mtn){
     out=out.replace(/\(○○산\)/g, "("+loc.mtn+")").replace(/○○산/g, loc.mtn);
@@ -684,10 +685,13 @@ function parseTraining(text){
   const R={training:true};
   R.ilsi=grab("사고일시")||grab("사고일시·장소")||grab("일시");
   R.jangsoTmpl=grab("사고장소")||grab("사고 장소");
-  R.gaeyoTmpl=grabBlock(text,"상황\\s*개요","조치\\s*사항|3\\s*\\.");
+  R.gaeyoTmpl=grabBlock(text,"상황\\s*개요","조치\\s*사항|3\\s*\\.|※|상가명은");
   R.actionTmpl=grabBlock(text,"조치\\s*사항","긴급재난문자|재난상황보고서 제출|중앙재난|※|붙임|$");
-  const tt=TRAIN_TYPES.find(([re])=>re.test(text));
-  R.type=tt?tt[1]:"훈련 상황";
+  // 유형: 상황개요(없으면 본문)에서 '가장 먼저 등장하는' 재난 키워드를 주 유형으로
+  const scanText=(R.gaeyoTmpl&&R.gaeyoTmpl.trim())?R.gaeyoTmpl:text;
+  const hits=TRAIN_TYPES.map(([re,name])=>{ const m=scanText.match(re); return m?{name,idx:m.index}:null; }).filter(Boolean);
+  hits.sort((a,b)=>a.idx-b.idx);
+  R.type=hits.length?hits[0].name:"훈련 상황";
   return R;
 }
 
@@ -700,9 +704,14 @@ function applyTrainLoc(loc){
   // 사고장소: 실제 도로명 주소를 그대로 사용
   $("f_jangso").value=loc.addr;
   showMapByQuery(loc.addr, loc.addr);
-  // 상황개요: 유형별 정제된 문장 틀 사용 (원문 치환 X → 깔끔·일관)
-  const placeForGaeyo=`동해시 ${loc.dong} ${loc.place}`;
-  $("f_gaeyo").value=buildGaeyo(S.type, S.time||"○○:○○", placeForGaeyo);
+  // 상황개요: 훈련메시지 원문을 그대로 유지하고, 장소 자리표시자(○○시 ○○동 등)만 동해시 실제 주소로 치환
+  //  (원문이 없을 때만 유형별 기본 문장 사용)
+  if(S.gaeyoTmpl && S.gaeyoTmpl.trim()){
+    $("f_gaeyo").value=fillTrain(S.gaeyoTmpl, loc, mtnType);
+  }else{
+    const placeForGaeyo=`동해시 ${loc.dong} ${loc.place}`;
+    $("f_gaeyo").value=buildGaeyo(S.type, S.time||"○○:○○", placeForGaeyo);
+  }
   if(S.actionTmpl) $("f_action").value=fillTrain(S.actionTmpl, loc, mtnType);
   $("f_title").value=makeTitle(S.bo, true, loc.addr, S.type);
   $("trainLocText").textContent=loc.addr;

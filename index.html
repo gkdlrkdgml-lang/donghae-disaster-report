@@ -144,9 +144,20 @@
   .mappanel{grid-row:2;grid-column:1}
   .mappanel .pbody{padding:0;position:relative}
   #dashMapView{width:100%;height:100%}
+  /* 지도 위 그리기 레이어 */
+  #mapDraw{position:absolute;inset:0;z-index:5;pointer-events:none;touch-action:none}
+  #mapDraw.on{pointer-events:auto;cursor:crosshair}
+  #drawTools{position:absolute;left:10px;bottom:10px;z-index:8;display:none;flex-wrap:wrap;gap:4px;align-items:center;
+    background:rgba(10,20,34,.92);border:1px solid #2a567e;border-radius:9px;padding:6px 8px;max-width:calc(100% - 20px)}
+  #drawTools.on{display:flex}
+  #drawTools .dtool{width:32px;height:30px;background:#132840;border:1px solid #27456a;border-radius:6px;color:var(--ink);font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}
+  #drawTools .dtool.on{background:var(--cyan);color:#04101f;border-color:var(--cyan)}
+  #drawTools .dcol{width:24px;height:24px;border-radius:50%;border:2px solid #0a1422;cursor:pointer;padding:0;box-shadow:0 0 0 1px #3a5572}
+  #drawTools .dcol.on{box-shadow:0 0 0 2px #fff}
+  #drawTools .dsep{width:1px;height:22px;background:#2a567e;margin:0 3px}
   #dashMapMsg{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--dim);font-size:13px;padding:20px;pointer-events:none}
   /* 지도 위 현재 기상 오버레이 */
-  #dashWx{position:absolute;top:10px;left:10px;right:10px;z-index:6;display:none;flex-wrap:wrap;gap:7px;align-items:center;
+  #dashWx{position:absolute;top:10px;left:10px;right:10px;z-index:6;display:none;flex-wrap:wrap;gap:7px;align-items:center;pointer-events:none;
     background:rgba(10,20,34,.85);border:1px solid #2a567e;border-radius:10px;padding:8px 12px}
   .wxchip,.wxttl,.wxtime{flex-shrink:0;white-space:nowrap}
   /* 지도 헤더: 발생위치·주소·버튼 한 줄 유지 (주소 길면 … 로 줄임) */
@@ -264,7 +275,7 @@
   <div class="topnav">
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08d</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08f</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -492,11 +503,31 @@
     <!-- 큰 지도 (좌측) -->
     <div class="panel mappanel c-map">
       <h3>🗺 발생위치 <span class="sub" id="dashMapAddr"></span>
-        <button class="dbtn ghost sm" style="flex-shrink:0" onclick="dashMapShow()">📍 위치 표시</button>
+        <button class="dbtn ghost sm" id="drawToggleBtn" style="flex-shrink:0;margin-left:auto" onclick="toggleDraw(this)">✏️ 그리기</button>
+        <button class="dbtn ghost sm" style="flex-shrink:0;margin-left:5px" onclick="dashMapShow()">📍 위치 표시</button>
         <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:5px;padding:4px 9px" onclick="togglePanelFull('c-map',this)">⛶</button></h3>
       <div class="pbody">
         <div id="dashMapView"></div>
+        <canvas id="mapDraw"></canvas>
         <div id="dashWx"></div>
+        <div id="drawTools">
+          <button class="dtool on" data-tool="pen" title="펜(자유그리기)">✏️</button>
+          <button class="dtool" data-tool="line" title="직선">╱</button>
+          <button class="dtool" data-tool="arrow" title="화살표">➜</button>
+          <button class="dtool" data-tool="rect" title="사각형">▭</button>
+          <button class="dtool" data-tool="circle" title="원">◯</button>
+          <button class="dtool" data-tool="text" title="텍스트">T</button>
+          <span class="dsep"></span>
+          <button class="dcol on" data-color="#ff3b30" style="background:#ff3b30"></button>
+          <button class="dcol" data-color="#ff9500" style="background:#ff9500"></button>
+          <button class="dcol" data-color="#ffee33" style="background:#ffee33"></button>
+          <button class="dcol" data-color="#34c759" style="background:#34c759"></button>
+          <button class="dcol" data-color="#0a84ff" style="background:#0a84ff"></button>
+          <button class="dcol" data-color="#ffffff" style="background:#ffffff"></button>
+          <span class="dsep"></span>
+          <button class="dtool" id="drawUndo" title="되돌리기">↩</button>
+          <button class="dtool" id="drawClear" title="전체 지우기">🗑</button>
+        </div>
         <div id="dashMapMsg">발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다.</div>
       </div>
     </div>
@@ -1700,7 +1731,7 @@ function showPage(p){
     // 기상 10분마다 자동 갱신 (현재 표시 중인 위치 기준, 조용히)
     if(!wxTimer){ wxTimer=setInterval(()=>{ if($("pageDash").style.display!=="none" && window.__dashCoords){ dashWeather(window.__dashCoords.lat, window.__dashCoords.lng, true); } }, 600000); }
     // 지도: 숨김 상태에서 그려졌으면 크기 재계산, 장소 있으면 표시
-    setTimeout(()=>{ if(dashMap){ dashMap.relayout(); } dashMapShow(); }, 150);
+    setTimeout(()=>{ if(dashMap){ dashMap.relayout(); } dashMapShow(); resizeDrawCanvas(); }, 150);
   }
 }
 
@@ -1918,7 +1949,7 @@ function lRender(k){ const c=LCFG[k]; const box=$(c.list); if(!box)return;
 // ── 상황판 초기화 — 모든 기록 삭제 + '상황없음' ──
 function resetBoard(){
   if(!confirm("⚠ 상황판 초기화\n\n현재 상황판의 모든 기록이 삭제되고 '상황없음'으로 돌아갑니다.\n · 상황 요약(유형·장소·일시·단계)\n · 상황 일지 · 조치사항\n · 동원 인력 / 장비\n\n공유 중이면 모든 화면에서 함께 지워집니다.\n계속하시겠습니까?")) return;
-  if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); }
+  if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); fbDB.ref("draw").remove(); }
   else { LS.set("dh_log",[]); LS.set("dh_res",[]); LS.set("dh_equip",[]); renderLog(); lRender("res"); lRender("equip"); }
   // 상황 요약 → 상황없음 (공유 전파)
   $("dsLevel").value="0"; $("dsType").value=""; $("dsPlace").value=""; $("dsTime").value="";
@@ -1928,10 +1959,66 @@ function resetBoard(){
 }
 function clearDashMap(){
   window.__dashCoords=null; dashMapLastQuery=null;
+  drawStrokes=[]; redrawMapDraw();   // 지도 그린 주석도 초기화
   if(dashMarker){ try{dashMarker.setMap(null);}catch(e){} }
   if($("dashMapAddr")) $("dashMapAddr").textContent="";
   if($("dashWx")){ $("dashWx").style.display="none"; $("dashWx").innerHTML=""; }
   dashMsg("발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다.");
+}
+
+// ── 지도 위 그리기(주석) 레이어 ──
+let drawOn=false, drawTool="pen", drawColor="#ff3b30", drawWidth=3;
+let drawStrokes=[], drawingNow=false, curStroke=null;
+// Firebase 공유용: 배열 정규화(파베는 배열을 객체로 돌려줄 수 있음) + 전체 그림 저장
+function dArr(x){ if(Array.isArray(x))return x; if(x&&typeof x==="object") return Object.keys(x).sort((a,b)=>a-b).map(k=>x[k]); return []; }
+function dNormStrokes(v){ return dArr(v).map(s=>({ type:s.type, color:s.color, width:s.width, size:s.size, text:s.text, points:dArr(s.points).map(p=>({x:+p.x,y:+p.y})) })).filter(s=>s.type&&s.points.length); }
+function pushDraw(){ if(fbReady){ try{ fbDB.ref("draw").set(drawStrokes.length?drawStrokes:null); }catch(e){} } }   // 모든 화면에 공유(빈 배열이면 제거)
+function dCanvas(){ return $("mapDraw"); }
+function resizeDrawCanvas(){ const c=dCanvas(); if(!c)return; const box=c.parentElement; const r=box.getBoundingClientRect();
+  if(r.width&&r.height){ c.width=Math.round(r.width); c.height=Math.round(r.height); } redrawMapDraw(); }
+function dNorm(e){ const c=dCanvas(); const r=c.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height}; }
+function drawArrowHead(ctx,a,b,w){ const ang=Math.atan2(b.y-a.y,b.x-a.x); const L=10+w*2.2;
+  ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(b.x-L*Math.cos(ang-Math.PI/7), b.y-L*Math.sin(ang-Math.PI/7));
+  ctx.moveTo(b.x,b.y); ctx.lineTo(b.x-L*Math.cos(ang+Math.PI/7), b.y-L*Math.sin(ang+Math.PI/7)); ctx.stroke(); }
+function redrawMapDraw(){ const c=dCanvas(); if(!c)return; const ctx=c.getContext("2d"); const W=c.width,H=c.height; ctx.clearRect(0,0,W,H);
+  const one=(s)=>{ if(!s||!s.points||!s.points.length)return; ctx.strokeStyle=s.color; ctx.fillStyle=s.color; ctx.lineWidth=s.width||3; ctx.lineCap="round"; ctx.lineJoin="round";
+    const P=s.points.map(p=>({x:p.x*W,y:p.y*H}));
+    if(s.type==="pen"){ ctx.beginPath(); P.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); }
+    else if(s.type==="line"||s.type==="arrow"){ const a=P[0],b=P[P.length-1]; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); if(s.type==="arrow") drawArrowHead(ctx,a,b,s.width||3); }
+    else if(s.type==="rect"){ const a=P[0],b=P[1]||P[0]; ctx.strokeRect(Math.min(a.x,b.x),Math.min(a.y,b.y),Math.abs(b.x-a.x),Math.abs(b.y-a.y)); }
+    else if(s.type==="circle"){ const a=P[0],b=P[1]||P[0]; ctx.beginPath(); ctx.ellipse(a.x,a.y,Math.abs(b.x-a.x),Math.abs(b.y-a.y),0,0,2*Math.PI); ctx.stroke(); }
+    else if(s.type==="text"){ const p=P[0]; const fs=(s.size||20); ctx.font=`bold ${fs}px 'Malgun Gothic',sans-serif`; ctx.textBaseline="top";
+      ctx.lineWidth=4; ctx.strokeStyle="rgba(0,0,0,.75)"; ctx.strokeText(s.text||"",p.x,p.y); ctx.fillStyle=s.color; ctx.fillText(s.text||"",p.x,p.y); }
+  };
+  drawStrokes.forEach(one); if(curStroke) one(curStroke);
+}
+function toggleDraw(btn){ drawOn=!drawOn; const c=dCanvas();
+  c.classList.toggle("on",drawOn); $("drawTools").classList.toggle("on",drawOn);
+  if(btn){ btn.textContent=drawOn?"✏️ 그리기 끝":"✏️ 그리기"; btn.classList.toggle("on",drawOn); }
+  if(dashMap){ try{ dashMap.setDraggable(!drawOn); dashMap.setZoomable(!drawOn); }catch(e){} }  // 그릴 땐 지도 고정
+  if(drawOn) resizeDrawCanvas();
+}
+function initMapDraw(){
+  const c=dCanvas(); if(!c||c.dataset.init)return; c.dataset.init="1";
+  c.addEventListener("pointerdown",e=>{ if(!drawOn)return; e.preventDefault();
+    const n=dNorm(e);
+    if(drawTool==="text"){ const t=prompt("지도에 표시할 텍스트를 입력하세요"); if(t&&t.trim()){ drawStrokes.push({type:"text",color:drawColor,size:20,text:t.trim(),points:[n]}); redrawMapDraw(); pushDraw(); } return; }
+    try{ c.setPointerCapture(e.pointerId); }catch(_){}
+    drawingNow=true; curStroke={type:drawTool,color:drawColor,width:drawWidth,points:[n]};
+    if(drawTool!=="pen") curStroke.points.push(n);
+  });
+  c.addEventListener("pointermove",e=>{ if(!drawingNow||!curStroke)return; const n=dNorm(e);
+    if(drawTool==="pen") curStroke.points.push(n); else curStroke.points[1]=n; redrawMapDraw(); });
+  const finish=()=>{ if(!drawingNow)return; drawingNow=false; if(curStroke&&curStroke.points.length){ drawStrokes.push(curStroke); } curStroke=null; redrawMapDraw(); pushDraw(); };
+  c.addEventListener("pointerup",finish); c.addEventListener("pointercancel",finish);
+  // 도구/색상 버튼
+  $("drawTools").querySelectorAll(".dtool[data-tool]").forEach(b=>b.addEventListener("click",()=>{
+    drawTool=b.dataset.tool; $("drawTools").querySelectorAll(".dtool[data-tool]").forEach(x=>x.classList.toggle("on",x===b)); }));
+  $("drawTools").querySelectorAll(".dcol").forEach(b=>b.addEventListener("click",()=>{
+    drawColor=b.dataset.color; $("drawTools").querySelectorAll(".dcol").forEach(x=>x.classList.toggle("on",x===b)); }));
+  $("drawUndo").addEventListener("click",()=>{ drawStrokes.pop(); redrawMapDraw(); pushDraw(); });
+  $("drawClear").addEventListener("click",()=>{ if(drawStrokes.length && confirm("지도에 그린 내용을 모두 지울까요?"+(fbReady?" (공유 중이면 모든 화면에서 지워집니다)":""))){ drawStrokes=[]; redrawMapDraw(); pushDraw(); } });
+  window.addEventListener("resize",()=>{ if($("pageDash").style.display!=="none") resizeDrawCanvas(); });
 }
 
 // ── 패널 전체화면 토글 (지도·상황일지·동원·재난문자·언론보도) ──
@@ -1939,8 +2026,8 @@ function togglePanelFull(cls, btn){
   const panel=document.querySelector("."+cls); if(!panel) return;
   const on=panel.classList.toggle("panel-full");
   if(btn){ btn.textContent = on ? "✕ 닫기" : "⛶"; btn.title = on ? "닫기" : "전체화면"; }
-  // 지도 패널은 전체화면 전환 시 크기·중심 재계산
-  if(dashMap){ setTimeout(()=>{ dashMap.relayout(); if(window.__dashCoords){ try{ dashMap.setCenter(new kakao.maps.LatLng(window.__dashCoords.lat, window.__dashCoords.lng)); }catch(e){} } },90); }
+  // 지도 패널은 전체화면 전환 시 크기·중심·그리기 재계산
+  if(dashMap){ setTimeout(()=>{ dashMap.relayout(); if(window.__dashCoords){ try{ dashMap.setCenter(new kakao.maps.LatLng(window.__dashCoords.lat, window.__dashCoords.lng)); }catch(e){} } resizeDrawCanvas(); },90); }
 }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ document.querySelectorAll(".panel-full").forEach(p=>{ p.classList.remove("panel-full"); const b=p.querySelector('h3 button[onclick*="togglePanelFull"]'); if(b){ b.textContent="⛶"; b.title="전체화면"; } }); if(dashMap) setTimeout(()=>dashMap.relayout(),90); } });
 
@@ -1953,6 +2040,7 @@ function saveBoardData(){
     res:  lActive("res").map(r=>({a:r.a||"", n:r.n||"", ts:r.ts||+r.id||0})),
     equip:lActive("equip").map(r=>({a:r.a||"", n:r.n||"", ts:r.ts||+r.id||0})),
     coords: window.__dashCoords||null,
+    draw: drawStrokes,   // 지도에 그린 주석
   };
   const now=new Date(), p=n=>String(n).padStart(2,"0");
   const name=`재난상황판_${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.json`;
@@ -1984,6 +2072,10 @@ function loadBoardData(file){
     if(d.coords && d.coords.lat){ dashMapLastQuery=($("dsPlace").value||"").trim(); dashMapCoords(d.coords.lat, d.coords.lng, $("dsPlace").value); }
     else if(($("dsPlace").value||"").trim()){ dashMapShow(); }
     else { clearDashMap(); }
+    // 지도 그린 주석 복원 (+ 공유 전파)
+    drawStrokes = dNormStrokes(d.draw);
+    pushDraw();
+    setTimeout(()=>{ resizeDrawCanvas(); }, 250);
     alert("✓ 불러오기 완료 — 상황판에 표시했습니다."+(d.savedAt?`\n(저장 시각: ${new Date(d.savedAt).toLocaleString("ko-KR")})`:""));
   };
   rd.readAsText(file);
@@ -2262,6 +2354,8 @@ async function initFirebase(){
       fbEquip=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts); lRender("equip"); });
     // 현재 상황 실시간 구독
     fbDB.ref("situation").on("value",snap=>{ applyRemoteSit(snap.val()); });
+    // 지도 그린 주석 실시간 구독 (내가 그리는 중이면 덮어쓰지 않음)
+    fbDB.ref("draw").on("value",snap=>{ if(drawingNow) return; drawStrokes=dNormStrokes(snap.val()); redrawMapDraw(); });
     fbReady=true; setSyncBadge(true);
   }catch(e){ console.warn("Firebase 연결 실패:",e); fbReady=false; setSyncBadge(false); }
 }
@@ -2288,6 +2382,7 @@ function setSyncBadge(on){
     $("dashClock").textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
     $("dashDate").textContent=`${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}(${DW[d.getDay()]})`; };
   tick(); setInterval(tick,1000);
+  initMapDraw();    // 지도 그리기 레이어 준비
   initFirebase();   // 설정되어 있으면 실시간 공유 활성화
 })();
 </script>

@@ -114,6 +114,9 @@
   /* ░░ 재난상황판 (관제 보드형 — 화면을 꽉 채움) ░░ */
   .board{display:grid;grid-template-columns:minmax(300px,.85fr) 2fr;grid-template-rows:auto 1fr;gap:12px;
     padding:12px 16px;height:calc(100vh - 98px);box-sizing:border-box}
+  /* 상황판 탭에서는 상단 제목 바를 숨겨 지도·일지·동원 패널을 더 키움 */
+  body.dash-active .topbar{display:none}
+  body.dash-active .board{height:calc(100vh - 50px)}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
   .panel>h3{margin:0;padding:12px 16px;font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);flex-shrink:0}
   .panel>h3 .sub{margin-left:auto;font-size:13px;color:var(--dim);font-weight:600}
@@ -121,17 +124,19 @@
   /* 상단 요약 바 */
   .summary{grid-column:1 / -1;background:var(--panel);border:1px solid var(--line);border-radius:12px;
     display:flex;align-items:stretch;gap:0;overflow:hidden}
-  .sblk{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px 18px;border-right:1px solid var(--line)}
-  .sblk label{font-size:13px;color:var(--dim);font-weight:700;letter-spacing:.04em}
-  .sblk .sval{background:transparent;border:none;color:var(--ink);font-size:24px;font-weight:800;outline:none;font-family:inherit;padding:0;width:100%}
-  .sblk .sval::placeholder{color:#44566e;font-weight:600;font-size:18px}
+  .sblk{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:6px 16px;border-right:1px solid var(--line)}
+  .sblk label{font-size:12px;color:var(--dim);font-weight:700;letter-spacing:.04em}
+  .sblk .sval{background:transparent;border:none;color:var(--ink);font-size:19px;font-weight:800;outline:none;font-family:inherit;padding:0;width:100%}
+  .sblk .sval::placeholder{color:#44566e;font-weight:600;font-size:15px}
   .sblk.grow{flex:1}
   .sblk.lvlblk{background:#0e1830}
-  .sblk select.sval{font-size:19px;cursor:pointer}
-  .sclock{margin-left:auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:12px 22px;border-right:none}
-  .sclock .ct{font-size:32px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1}
-  .sclock .cd{font-size:14px;color:var(--dim)}
-  .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:26px;font-weight:900;padding:8px 18px;border-radius:10px;white-space:nowrap}
+  .sblk select.sval{font-size:14px;cursor:pointer}
+  .sclock{margin-left:auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:6px 20px;border-right:none}
+  .sclock .ct{font-size:25px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums;line-height:1.1}
+  .sclock .cd{font-size:13px;color:var(--dim)}
+  .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:20px;font-weight:900;padding:4px 13px;border-radius:9px;white-space:nowrap}
+  .boardbtns{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:430px}
+  .boardbtns .dbtn{padding:6px 10px;font-size:12.5px;white-space:nowrap}
   .lvl-0{background:#2a3647;color:#9fb4d4} .lvl-관심{background:#1c3a5a;color:#8fd0ff}
   .lvl-주의{background:#4a4210;color:#ffe08a} .lvl-경계{background:#5a3210;color:#ffb27a} .lvl-심각{background:#5a1518;color:#ff9a9c;animation:pulse 1.4s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #e5484d55}50%{box-shadow:0 0 0 7px #e5484d00}}
@@ -151,16 +156,38 @@
   .wxchip{font-size:16px;font-weight:700;color:var(--ink);background:#0f2438;border:1px solid #1e3a52;border-radius:7px;padding:5px 11px;white-space:nowrap}
   .wxtime{font-size:12.5px;color:var(--dim);margin-left:auto}
   /* 우측 패널 묶음 */
-  .side{grid-row:2;grid-column:2;display:grid;grid-template-columns:1.1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:0}
+  .side{grid-row:2;grid-column:2;display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:1.35fr 0.8fr 0.85fr;gap:12px;min-height:0}
   .side .panel{min-height:0}
-  .side .c-log{grid-column:1;grid-row:1 / 3}
-  .side .c-dm{grid-column:2;grid-row:1}
-  .side .c-press{grid-column:2;grid-row:2}
+  .side .c-log{grid-column:1;grid-row:1 / 4}   /* 상황일지: 좌측 전체 높이로 크게 */
+  .side .c-mob{grid-column:2;grid-row:1}        /* 동원현황: 우측 상단 */
+  .side .c-dm{grid-column:2;grid-row:2}         /* 실시간 재난문자: 우측 중단 */
+  .side .c-press{grid-column:2;grid-row:3}      /* 언론보도: 우측 하단(작게, 2~3건) */
   /* 패널별 색 구분: 지도=파랑, 상황일지=노랑, 재난문자=빨강, 언론보도=초록 */
   .c-map{--ac:#5BB8FF;--acbg:#12304D;--acln:#2A5B86}
   .c-log{--ac:#FFC857;--acbg:#3A2F12;--acln:#7A6223}
   .c-dm{--ac:#FF8A8A;--acbg:#3D1A20;--acln:#853842}
   .c-press{--ac:#6FE0A6;--acbg:#123527;--acln:#2B7453}
+  .c-mob{--ac:#B49DF5;--acbg:#241C3D;--acln:#4A3D73}
+  /* 동원 현황: 인력·장비 2열 */
+  .mobbody{display:flex!important;gap:10px;padding:10px 12px;overflow:hidden}
+  .mobcol{flex:1;display:flex;flex-direction:column;min-height:0;background:#141d2e;border:1px solid #27314a;border-radius:8px;overflow:hidden}
+  .moblabel{display:flex;align-items:center;font-size:15px;font-weight:800;color:var(--ac);padding:7px 10px;border-bottom:1px solid #27314a;background:#1a2233}
+  .moblabel .sub{font-size:12.5px;color:#9fb0cc;font-weight:600}
+  .moblist{flex:1;overflow:auto;padding:0;min-height:0}
+  .mobtools{display:flex;gap:5px;padding:7px 8px;border-top:1px solid #27314a;flex-shrink:0}
+  /* 동원 입력 표 */
+  .motab{width:100%;border-collapse:collapse}
+  .motab thead th{position:sticky;top:0;z-index:1;font-size:12.5px;color:#9fb0cc;font-weight:700;text-align:left;padding:5px 8px;background:#1a2233;border-bottom:1px solid #2b3a57}
+  .motab td{padding:5px 8px;border-bottom:1px solid #222d44;color:#E7E0FB;font-size:16px}
+  .motab td.mc-a{font-weight:600;min-width:60px}
+  .motab th.mc-n,.motab td.mc-n{width:62px;text-align:right;font-variant-numeric:tabular-nums}
+  .motab th.mc-x,.motab td.mc-x{width:26px;text-align:center;padding:5px 2px}
+  .motab td[contenteditable]:focus{outline:none;background:#161029;box-shadow:inset 0 0 0 2px var(--ac);border-radius:4px}
+  .motab td[data-new]:empty::before{content:attr(data-ph);color:#5a6a85;font-size:14px}
+  .motab tr.mrow-new td{border-bottom:none;opacity:.95}
+  .c-mob .moblabel .sub{color:var(--ac);font-weight:800;font-size:14px}
+  .motab .ld{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;padding:0}
+  .motab .ld:hover{color:var(--red)}
   .panel[class*="c-"]{border-color:var(--acln);border-top:3px solid var(--ac)}
   .panel[class*="c-"]>h3{background:var(--acbg);color:var(--ac);border-bottom-color:var(--acln);font-size:19px}
   .panel[class*="c-"]>h3 .sub{color:#C4D2E6;font-size:14px}
@@ -195,9 +222,35 @@
   .newsrow .nm .src{color:#8fb8ff}
   .dhint{font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5}
   .ptools{display:flex;gap:6px;padding:9px 12px;border-top:1px solid var(--line);flex-shrink:0;flex-wrap:wrap;align-items:center}
+  /* 패널 전체화면 (언론보도 등) */
+  .panel.panel-full{position:fixed;inset:14px;z-index:4000;margin:0;box-shadow:0 0 0 3000px rgba(4,10,20,.72)}
+  .panel.panel-full .pbody{padding:14px 18px}
+  .panel.panel-full .newsrow .nt{font-size:21px}
+  .panel.panel-full .newsrow .nm{font-size:16px;margin-top:7px}
+  /* 상황판 출력(인쇄) — #printArea만 백지 양식으로 */
+  #printArea{display:none}
+  @media print{
+    body{background:#fff}
+    body > *{display:none!important}
+    #printArea{display:block!important}
+    .pb-doc{color:#000;font-family:'Malgun Gothic','맑은 고딕',sans-serif;padding:6mm 2mm}
+    .pb-doc h1{font-size:22px;text-align:center;margin:0 0 4px;letter-spacing:.06em}
+    .pb-doc .pb-sub{text-align:center;font-size:12px;color:#444;margin-bottom:12px}
+    .pb-doc h2{font-size:15px;margin:14px 0 5px;padding-bottom:3px;border-bottom:2px solid #333}
+    .pb-doc table{width:100%;border-collapse:collapse;font-size:12.5px}
+    .pb-info th,.pb-info td{border:1px solid #333;padding:6px 9px;text-align:left}
+    .pb-info th{background:#eee;width:14%;white-space:nowrap}
+    .pb-list th{border:1px solid #333;background:#eee;padding:5px 8px;text-align:left;font-size:12px}
+    .pb-list td{border:1px solid #999;padding:5px 8px;vertical-align:top}
+    .pb-list .tt{width:64px;white-space:nowrap;font-weight:700;background:#f4f4f4}
+    .pb-list .tc{text-align:center}
+    .pb-2col{display:flex;gap:14px}
+    .pb-2col > div{flex:1}
+    .pb-doc table,.pb-doc tr,.pb-2col{page-break-inside:avoid}
+  }
   @media(max-width:1000px){.board{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto}
     .mappanel{grid-row:auto;grid-column:auto}.side{grid-row:auto;grid-column:auto;grid-template-columns:1fr;grid-template-rows:none}
-    .side .c-log,.side .c-dm,.side .c-press{grid-column:auto;grid-row:auto}.side .panel{min-height:300px;max-height:70vh}
+    .side .c-log,.side .c-mob,.side .c-dm,.side .c-press{grid-column:auto;grid-row:auto}.side .panel{min-height:300px;max-height:70vh}
     #dashMapView{height:340px}.summary{flex-wrap:wrap}}
 </style>
 </head>
@@ -205,13 +258,13 @@
   <div class="topbar">
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
-    <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07p</span>
+    <span class="badge" style="margin-left:auto">별지 제1호서식 · 오프라인</span>
   </div>
 
   <div class="topnav">
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08b</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -423,14 +476,24 @@
       <div class="sblk"><label>상황 유형</label><input id="dsType" class="sval" placeholder="유형 입력"></div>
       <div class="sblk grow"><label>발생장소</label><input id="dsPlace" class="sval" placeholder="발생장소 입력"></div>
       <div class="sblk"><label>발생일시</label><input id="dsTime" class="sval" placeholder="발생일시"></div>
-      <div class="sblk" style="justify-content:center"><button class="dbtn sm" onclick="pullFromReport()">📄 보고서에서<br>가져오기</button></div>
+      <div class="sblk" style="justify-content:center">
+        <div class="boardbtns">
+          <button class="dbtn sm" onclick="pullFromReport()">📄 가져오기</button>
+          <button class="dbtn ghost sm" onclick="printBoard()">🖨 출력</button>
+          <button class="dbtn ghost sm" onclick="saveBoardData()">💾 저장</button>
+          <button class="dbtn ghost sm" onclick="document.getElementById('loadFile').click()">📂 불러오기</button>
+          <button class="dbtn ghost sm" style="border-color:#7a3b3b;color:#ff9a9c" onclick="resetBoard()">🗑 초기화</button>
+        </div>
+        <input type="file" id="loadFile" accept="application/json,.json" style="display:none">
+      </div>
       <div class="sclock"><div class="ct" id="dashClock">--:--:--</div><div class="cd" id="dashDate"></div></div>
     </div>
 
     <!-- 큰 지도 (좌측) -->
     <div class="panel mappanel c-map">
       <h3>🗺 발생위치 <span class="sub" id="dashMapAddr"></span>
-        <button class="dbtn ghost sm" style="flex-shrink:0" onclick="dashMapShow()">📍 위치 표시</button></h3>
+        <button class="dbtn ghost sm" style="flex-shrink:0" onclick="dashMapShow()">📍 위치 표시</button>
+        <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:5px;padding:4px 9px" onclick="togglePanelFull('c-map',this)">⛶</button></h3>
       <div class="pbody">
         <div id="dashMapView"></div>
         <div id="dashWx"></div>
@@ -442,7 +505,8 @@
     <div class="side">
       <!-- 상황 일지 -->
       <div class="panel c-log">
-        <h3>📝 상황 일지 · 조치사항 <span class="sub" id="syncBadge" style="color:#7b8da6">PC 개별 저장</span><span class="sub" id="logCount" style="margin-left:8px"></span></h3>
+        <h3>📝 상황 일지 · 조치사항 <span class="sub" id="syncBadge" style="color:#7b8da6">PC 개별 저장</span><span class="sub" id="logCount" style="margin-left:8px"></span>
+          <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:8px;padding:4px 9px" onclick="togglePanelFull('c-log',this)">⛶</button></h3>
         <div class="pbody" id="logList"></div>
         <div class="ptools">
           <input id="logInput" style="flex:1;min-width:120px;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:12px 14px;font-size:19px;font-weight:600;outline:none;font-family:inherit" placeholder="조치 내용 입력 후 Enter">
@@ -451,13 +515,29 @@
           <button class="dbtn ghost sm" onclick="clearLog()">전체삭제</button>
         </div>
       </div>
+      <!-- 동원 인력·장비 -->
+      <div class="panel c-mob">
+        <h3>🧑‍🚒 동원 현황 <span class="sub">인력·장비</span><span class="sub" id="mobSync" style="margin-left:8px;color:#7b8da6">PC 개별 저장</span>
+          <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:8px;padding:4px 9px" onclick="togglePanelFull('c-mob',this)">⛶</button></h3>
+        <div class="pbody mobbody">
+          <div class="mobcol">
+            <div class="moblabel">👤 동원 인력 <span class="sub" id="resCount" style="margin-left:auto"></span></div>
+            <div class="moblist" id="resList"></div>
+          </div>
+          <div class="mobcol">
+            <div class="moblabel">🚒 동원 장비 <span class="sub" id="equipCount" style="margin-left:auto"></span></div>
+            <div class="moblist" id="equipList"></div>
+          </div>
+        </div>
+      </div>
       <!-- 실시간 재난문자 -->
       <div class="panel c-dm">
-        <h3>🚨 실시간 재난문자 <span class="sub" id="dmTime"></span></h3>
+        <h3>🚨 실시간 재난문자 <span class="sub" id="dmTime"></span>
+          <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:auto;padding:4px 9px" onclick="togglePanelFull('c-dm',this)">⛶</button></h3>
         <div class="pbody" id="dmList"><div class="logempty">행정안전부 긴급재난문자 실시간 목록입니다.<br>새로고침을 누르면 불러옵니다.</div></div>
         <div class="ptools">
           <select id="dmRegion" style="background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 11px;font-size:14.5px;outline:none;font-family:inherit">
-            <option value="강원">강원</option><option value="동해">동해시</option><option value="">전국</option>
+            <option value="동해">동해시</option><option value="강원">강원</option><option value="">전국</option>
           </select>
           <button class="dbtn sm" onclick="fetchDisasterMsg()">🔄 새로고침</button>
           <input id="newsQuery" type="hidden">
@@ -466,7 +546,8 @@
       </div>
       <!-- 언론보도 -->
       <div class="panel c-press">
-        <h3>📺 언론보도 <span class="sub" id="pressQ" style="color:#F2F6FC"></span><span class="sub" id="pressTime" style="margin-left:8px"></span></h3>
+        <h3>📺 언론보도 <span class="sub" id="pressQ" style="color:#F2F6FC"></span><span class="sub" id="pressTime"></span>
+          <button class="dbtn ghost sm" title="전체화면" style="margin-left:auto;flex-shrink:0;padding:4px 9px" onclick="togglePanelFull('c-press',this)">⛶</button></h3>
         <div class="pbody" id="pressList"><div class="logempty">현재 상황 관련 언론보도를 검색해 표시합니다.<br>새로고침을 누르면 불러옵니다.</div></div>
         <div class="ptools">
           <input id="pressQuery" style="flex:1;min-width:110px;background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 11px;font-size:14.5px;outline:none;font-family:inherit" placeholder="검색어 (비우면 현재 상황으로)">
@@ -1605,6 +1686,7 @@ let newsTimer=null, wxTimer=null;
 
 function showPage(p){
   const dash=p==="dash";
+  document.body.classList.toggle("dash-active", dash);   // 상황판일 때 제목 바 숨김
   $("pageReport").style.display=dash?"none":"";
   $("pageDash").style.display=dash?"":"none";   // CSS(.board=grid)가 레이아웃 담당
   $("navReport").classList.toggle("on",!dash);
@@ -1638,7 +1720,8 @@ function applyRemoteSit(s){
   LS.set("dh_sit",s); renderLevelPill();
   // 발생장소가 (다른 PC에서) 바뀌었으면 지도·기상·언론보도 자동 갱신
   const place=(s.place||"").trim();
-  if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); }
+  if(!place && !(s.type||"").trim()){ clearDashMap(); }   // 다른 PC에서 초기화됨 → 지도도 초기화
+  else if(place && place!==dashMapLastQuery && $("pageDash").style.display!=="none"){ dashMapShow(); }
   schedulePress();
 }
 function loadSit(){
@@ -1677,7 +1760,7 @@ function dashMapCoords(lat,lng,label){
   $("dashMapAddr").textContent=label||$("dsPlace").value||"";
   const pos=new kakao.maps.LatLng(lat,lng);
   if(!dashMap){ dashMap=new kakao.maps.Map($("dashMapView"),{center:pos,level:4}); dashMarker=new kakao.maps.Marker({position:pos}); dashMarker.setMap(dashMap); }
-  else { dashMarker.setPosition(pos); }
+  else { dashMarker.setPosition(pos); dashMarker.setMap(dashMap); }
   setTimeout(()=>{ if(dashMap){ dashMap.relayout(); dashMap.setCenter(pos); } }, 80);
   dashWeather(lat,lng);   // 지도 위 현재 기상 표시
 }
@@ -1768,6 +1851,179 @@ function copyLog(){
   navigator.clipboard.writeText(txt).then(()=>{ const b=event.target; const o=b.textContent; b.textContent="복사됨 ✓"; setTimeout(()=>b.textContent=o,1200); });
 }
 function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ── 동원 인력·장비 (표로 입력 · 실시간 공유) ──
+let fbRes=null, fbEquip=null;   // Firebase 캐시
+const LCFG={
+  res:  {ref:"resources", ls:"dh_res",   list:"resList",   count:"resCount",   c1:"기관·구분", c2:"인원", unit:"명", pha:"기관 입력", get:()=>fbRes,   set:v=>fbRes=v},
+  equip:{ref:"equips",    ls:"dh_equip", list:"equipList", count:"equipCount", c1:"장비",      c2:"수량", unit:"대", pha:"장비 입력", get:()=>fbEquip, set:v=>fbEquip=v},
+};
+function lActive(k){ const c=LCFG[k]; return (fbReady && c.get()) ? c.get() : LS.get(c.ls,[]); }
+function lDel(k,id){ const c=LCFG[k]; if(fbReady){ fbDB.ref(c.ref+"/"+id).remove(); } else { LS.set(c.ls, LS.get(c.ls,[]).filter(x=>String(x.id)!==String(id))); lRender(k); } }
+function lEdit(k,id,field,val){ const c=LCFG[k];
+  if(fbReady){ fbDB.ref(c.ref+"/"+id).update({[field]:val}); }
+  else { const arr=LS.get(c.ls,[]); const o=arr.find(x=>String(x.id)===String(id)); if(o){ o[field]=val; LS.set(c.ls,arr); if(field==='n') lRender(k); } }
+}
+function lClear(k){ const c=LCFG[k]; if(!lActive(k).length)return; if(!confirm("모두 지울까요?"+(fbReady?" (공유 중이면 모든 화면에서 삭제됩니다)":"")))return; if(fbReady){ fbDB.ref(c.ref).remove(); } else { LS.set(c.ls,[]); lRender(k); } }
+function lTotal(k){ return lActive(k).reduce((s,r)=>{ const m=String(r.n||"").match(/-?\d+(\.\d+)?/); return s+(m?parseFloat(m[0]):0); },0); }
+// 맨 아래 빈 입력줄 읽기 / 커밋(실제 행으로 저장)
+function lReadNew(box){ const t=box.querySelector("tr.mrow-new"); if(!t) return null;
+  return {a:t.querySelector('[data-f="a"]').textContent.trim(), n:t.querySelector('[data-f="n"]').textContent.trim()}; }
+function lCommitNew(k, focusNext){ const c=LCFG[k]; const box=$(c.list); const v=lReadNew(box);
+  if(!v || (!v.a && !v.n)){ if(focusNext){ const nb=box.querySelector("tr.mrow-new [data-f='a']"); if(nb) nb.focus(); } return; }
+  const e={a:v.a, n:v.n, ts:Date.now()};
+  if(fbReady){ fbDB.ref(c.ref).push(e); } else { const arr=LS.get(c.ls,[]); arr.push({...e,id:Date.now()}); LS.set(c.ls,arr); lRender(k); }
+  if(focusNext){ setTimeout(()=>{ const nb=$(c.list).querySelector("tr.mrow-new [data-f='a']"); if(nb) nb.focus(); }, fbReady?150:30); }
+}
+function lRender(k){ const c=LCFG[k]; const box=$(c.list); if(!box)return;
+  // 이 표에서 입력 중이면 다시 그리지 않음(커서 유지) — 단, 빈 입력줄 입력 중엔 커밋이 담당
+  const ae=document.activeElement;
+  if(box.contains(ae) && ae.isContentEditable && ae.dataset && ae.dataset.id) return;
+  const rows=lActive(k).slice().sort((a,b)=>((a.ts||+a.id||0)-(b.ts||+b.id||0)));
+  const tot=lTotal(k); const totTxt=(Number.isInteger(tot)?tot:tot.toFixed(1))+c.unit;
+  if($(c.count)) $(c.count).textContent = rows.length ? ("합계 "+totTxt) : "";   // 합계를 제목 옆에
+  const dataRows = rows.map(r=>
+      `<tr><td class="mc-a" contenteditable="true" data-id="${r.id}" data-f="a">${escapeHtml(r.a||"")}</td>`+
+      `<td class="mc-n" contenteditable="true" data-id="${r.id}" data-f="n">${escapeHtml(r.n||"")}</td>`+
+      `<td class="mc-x"><button class="ld" title="삭제" onclick="lDel('${k}','${r.id}')">×</button></td></tr>`).join("");
+  const blankRow =   // 맨 아래 항상 비어있는 입력줄 (Enter로 확정 → 줄이 늘어남)
+      `<tr class="mrow-new"><td class="mc-a" contenteditable="true" data-new="1" data-f="a" data-ph="${c.pha}"></td>`+
+      `<td class="mc-n" contenteditable="true" data-new="1" data-f="n" data-ph=""></td><td class="mc-x"></td></tr>`;
+  box.innerHTML=
+    `<table class="motab"><thead><tr><th>${c.c1}</th><th class="mc-n">${c.c2}</th><th class="mc-x"></th></tr></thead>`+
+    `<tbody>${dataRows}${blankRow}</tbody></table>`;
+  // 기존 행: 수정(blur)·Enter 시 아래 빈줄로 이동
+  box.querySelectorAll('td[data-id]').forEach(el=>{
+    el.addEventListener("blur",()=>lEdit(k, el.dataset.id, el.dataset.f, el.textContent.trim()));
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); el.blur();
+      setTimeout(()=>{ const nb=$(c.list).querySelector("tr.mrow-new [data-f='a']"); if(nb) nb.focus(); }, fbReady?150:20); } });
+  });
+  // 빈 입력줄: Enter로 확정(새 줄 생성), 포커스 벗어나면 내용 있을 때만 저장
+  box.querySelectorAll('tr.mrow-new td[data-new]').forEach(el=>{
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); lCommitNew(k, true); } });
+    el.addEventListener("blur",()=>{ setTimeout(()=>{ const t=box.querySelector("tr.mrow-new"); if(t && t.contains(document.activeElement)) return; lCommitNew(k, false); }, 60); });
+  });
+}
+// ── 상황판 초기화 — 모든 기록 삭제 + '상황없음' ──
+function resetBoard(){
+  if(!confirm("⚠ 상황판 초기화\n\n현재 상황판의 모든 기록이 삭제되고 '상황없음'으로 돌아갑니다.\n · 상황 요약(유형·장소·일시·단계)\n · 상황 일지 · 조치사항\n · 동원 인력 / 장비\n\n공유 중이면 모든 화면에서 함께 지워집니다.\n계속하시겠습니까?")) return;
+  if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); }
+  else { LS.set("dh_log",[]); LS.set("dh_res",[]); LS.set("dh_equip",[]); renderLog(); lRender("res"); lRender("equip"); }
+  // 상황 요약 → 상황없음 (공유 전파)
+  $("dsLevel").value="0"; $("dsType").value=""; $("dsPlace").value=""; $("dsTime").value="";
+  saveSit();
+  // 지도·기상 초기화
+  clearDashMap();
+}
+function clearDashMap(){
+  window.__dashCoords=null; dashMapLastQuery=null;
+  if(dashMarker){ try{dashMarker.setMap(null);}catch(e){} }
+  if($("dashMapAddr")) $("dashMapAddr").textContent="";
+  if($("dashWx")){ $("dashWx").style.display="none"; $("dashWx").innerHTML=""; }
+  dashMsg("발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다.");
+}
+
+// ── 패널 전체화면 토글 (지도·상황일지·동원·재난문자·언론보도) ──
+function togglePanelFull(cls, btn){
+  const panel=document.querySelector("."+cls); if(!panel) return;
+  const on=panel.classList.toggle("panel-full");
+  if(btn){ btn.textContent = on ? "✕ 닫기" : "⛶"; btn.title = on ? "닫기" : "전체화면"; }
+  // 지도 패널은 전체화면 전환 시 크기·중심 재계산
+  if(dashMap){ setTimeout(()=>{ dashMap.relayout(); if(window.__dashCoords){ try{ dashMap.setCenter(new kakao.maps.LatLng(window.__dashCoords.lat, window.__dashCoords.lng)); }catch(e){} } },90); }
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ document.querySelectorAll(".panel-full").forEach(p=>{ p.classList.remove("panel-full"); const b=p.querySelector('h3 button[onclick*="togglePanelFull"]'); if(b){ b.textContent="⛶"; b.title="전체화면"; } }); if(dashMap) setTimeout(()=>dashMap.relayout(),90); } });
+
+// ── 상황판 데이터 저장(파일) / 불러오기 ──
+function saveBoardData(){
+  const data={
+    kind:"donghae-board", v:1, savedAt:new Date().toISOString(),
+    sit:{ type:$("dsType").value, place:$("dsPlace").value, time:$("dsTime").value, level:$("dsLevel").value },
+    logs: activeLogs().map(l=>({t:l.t||"", x:l.x||"", ts:l.ts||+l.id||0})),
+    res:  lActive("res").map(r=>({a:r.a||"", n:r.n||"", ts:r.ts||+r.id||0})),
+    equip:lActive("equip").map(r=>({a:r.a||"", n:r.n||"", ts:r.ts||+r.id||0})),
+    coords: window.__dashCoords||null,
+  };
+  const now=new Date(), p=n=>String(n).padStart(2,"0");
+  const name=`재난상황판_${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.json`;
+  saveBlob(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}), name);
+}
+function loadBoardData(file){
+  if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let d; try{ d=JSON.parse(rd.result); }catch(e){ alert("불러올 수 없는 파일입니다. (JSON 형식 아님)"); return; }
+    if(!d || d.kind!=="donghae-board" || !d.sit){ if(!confirm("재난상황판 저장 파일이 아닌 것 같습니다. 그래도 불러올까요?")) return; d=d||{}; d.sit=d.sit||{}; }
+    if(!confirm("저장된 상황판 내용으로 불러옵니다.\n현재 표시 중인 내용은 대체됩니다.\n(공유 중이면 모든 화면에 반영됩니다)\n\n계속할까요?")) return;
+    // 상황 요약
+    $("dsType").value=d.sit.type||""; $("dsPlace").value=d.sit.place||""; $("dsTime").value=d.sit.time||""; $("dsLevel").value=d.sit.level||"0";
+    saveSit();
+    // 상황일지·동원 인력/장비 복원
+    const stamp=Date.now();
+    if(fbReady){
+      fbDB.ref("logs").remove();      (d.logs||[]).forEach((l,i)=>fbDB.ref("logs").push({t:l.t||"", x:l.x||"", ts:l.ts||stamp+i}));
+      fbDB.ref("resources").remove(); (d.res||[]).forEach((r,i)=>fbDB.ref("resources").push({a:r.a||"", n:r.n||"", ts:r.ts||stamp+i}));
+      fbDB.ref("equips").remove();    (d.equip||[]).forEach((r,i)=>fbDB.ref("equips").push({a:r.a||"", n:r.n||"", ts:r.ts||stamp+i}));
+    } else {
+      LS.set("dh_log",  (d.logs||[]).map((l,i)=>({t:l.t||"", x:l.x||"", ts:l.ts||stamp+i, id:stamp+i})));
+      LS.set("dh_res",  (d.res||[]).map((r,i)=>({a:r.a||"", n:r.n||"", ts:r.ts||stamp+i, id:stamp+i})));
+      LS.set("dh_equip",(d.equip||[]).map((r,i)=>({a:r.a||"", n:r.n||"", ts:r.ts||stamp+i, id:stamp+i})));
+      renderLog(); lRender("res"); lRender("equip");
+    }
+    // 지도 복원
+    if(d.coords && d.coords.lat){ dashMapLastQuery=($("dsPlace").value||"").trim(); dashMapCoords(d.coords.lat, d.coords.lng, $("dsPlace").value); }
+    else if(($("dsPlace").value||"").trim()){ dashMapShow(); }
+    else { clearDashMap(); }
+    alert("✓ 불러오기 완료 — 상황판에 표시했습니다."+(d.savedAt?`\n(저장 시각: ${new Date(d.savedAt).toLocaleString("ko-KR")})`:""));
+  };
+  rd.readAsText(file);
+}
+
+// ── 상황판 전체 출력(인쇄) — 백지 양식으로 깔끔하게 ──
+function printBoard(){
+  const esc=escapeHtml;
+  const rowsHtml=(arr)=>{ const a=(arr||[]).slice().sort((x,y)=>((x.ts||+x.id||0)-(y.ts||+y.id||0)));
+    if(!a.length) return '<tr><td class="tc" colspan="2" style="color:#888">— 없음 —</td></tr>';
+    return a.map(l=>`<tr><td class="tt">${esc(l.t||"")}</td><td>${esc(l.x||"")}</td></tr>`).join(""); };
+  const simpleRows=(arr)=>{ const a=(arr||[]).slice().sort((x,y)=>((x.ts||+x.id||0)-(y.ts||+y.id||0)));
+    if(!a.length) return '<tr><td class="tc" style="color:#888">— 없음 —</td></tr>';
+    return a.map(l=>`<tr><td><b>${esc(l.t||"")}</b>  ${esc(l.x||"")}</td></tr>`).join(""); };
+  // 재난문자 목록(화면에 표시된 것) 추출
+  const dmItems=[...document.querySelectorAll('#dmList .newsrow, #dmList .logrow')].map(el=>el.innerText.trim().replace(/\s+/g," ")).filter(Boolean).slice(0,15);
+  const dmHtml = dmItems.length ? dmItems.map(t=>`<tr><td>${esc(t)}</td></tr>`).join("") : '<tr><td class="tc" style="color:#888">— 없음 —</td></tr>';
+  const wx=($("dashWx")&&$("dashWx").style.display!=="none")?($("dashWx").innerText||"").replace(/\s+/g," ").trim():"";
+  const now=new Date(), p=n=>String(n).padStart(2,"0");
+  const stamp=`${now.getFullYear()}.${p(now.getMonth()+1)}.${p(now.getDate())}. ${p(now.getHours())}:${p(now.getMinutes())}`;
+  const V=id=>esc(($(id)&&$(id).value)||"");
+  // 동원 표(기관/장비 · 수량 · 합계)
+  const motabRows=(arr,c1,c2,unit)=>{ const a=(arr||[]).slice().sort((x,y)=>((x.ts||+x.id||0)-(y.ts||+y.id||0)));
+    let tot=0; const body=a.length ? a.map(r=>{ const m=String(r.n||"").match(/-?\d+(\.\d+)?/); if(m)tot+=parseFloat(m[0]);
+        return `<tr><td>${esc(r.a||"")}</td><td style="text-align:right">${esc(r.n||"")}</td></tr>`; }).join("")
+      : '<tr><td class="tc" colspan="2" style="color:#888">— 없음 —</td></tr>';
+    const totTxt=(Number.isInteger(tot)?tot:tot.toFixed(1))+unit;
+    return `<thead><tr><th>${c1}</th><th style="text-align:right;width:70px">${c2}</th></tr></thead><tbody>${body}`+
+      `<tr><td style="font-weight:800;background:#f0f0f0">합계</td><td style="text-align:right;font-weight:800;background:#f0f0f0">${totTxt}</td></tr></tbody>`; };
+  const html=`
+  <div class="pb-doc">
+    <h1>동해시 재난상황판</h1>
+    <div class="pb-sub">출력일시 : ${stamp} · 동해시 재난안전상황실</div>
+    <table class="pb-info"><tbody>
+      <tr><th>대응단계</th><td>${esc(($("dsLevel")&&$("dsLevel").selectedOptions[0]?$("dsLevel").selectedOptions[0].text:""))}</td>
+          <th>상황유형</th><td>${V("dsType")}</td></tr>
+      <tr><th>발생장소</th><td colspan="3">${V("dsPlace")}</td></tr>
+      <tr><th>발생일시</th><td>${V("dsTime")}</td><th>현재기상</th><td>${esc(wx)||"-"}</td></tr>
+    </tbody></table>
+    <div class="pb-2col">
+      <div><h2>동원 인력</h2><table class="pb-list">${motabRows(lActive("res"),"기관·구분","인원","명")}</table></div>
+      <div><h2>동원 장비</h2><table class="pb-list">${motabRows(lActive("equip"),"장비","수량","대")}</table></div>
+    </div>
+    <h2>상황 일지 · 조치사항</h2>
+    <table class="pb-list wide"><tbody>${rowsHtml(activeLogs())}</tbody></table>
+    <h2>실시간 재난문자</h2>
+    <table class="pb-list wide"><tbody>${dmHtml}</tbody></table>
+  </div>`;
+  const pa=$("printArea"); pa.innerHTML=html;
+  window.print();
+}
 
 // ── 실시간 뉴스 (구글 뉴스 RSS + CORS 프록시) ──
 function setNewsQuery(q){ $("newsQuery").value=q; LS.set("dh_newsq",q); fetchNews(); }
@@ -1988,15 +2244,21 @@ async function initFirebase(){
       fbLogs=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts);
       renderLog();
     });
+    // 동원 인력·장비 실시간 구독
+    fbDB.ref("resources").on("value",snap=>{ const v=snap.val()||{};
+      fbRes=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts); lRender("res"); });
+    fbDB.ref("equips").on("value",snap=>{ const v=snap.val()||{};
+      fbEquip=Object.keys(v).map(k=>({id:k, t:v[k].t||"", x:v[k].x||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts); lRender("equip"); });
     // 현재 상황 실시간 구독
     fbDB.ref("situation").on("value",snap=>{ applyRemoteSit(snap.val()); });
     fbReady=true; setSyncBadge(true);
   }catch(e){ console.warn("Firebase 연결 실패:",e); fbReady=false; setSyncBadge(false); }
 }
 function setSyncBadge(on){
-  const b=$("syncBadge"); if(!b) return;
-  if(on){ b.textContent="🟢 실시간 공유 중"; b.style.color="#8fe0a6"; }
-  else { b.textContent="PC 개별 저장"; b.style.color="#7b8da6"; }
+  [["syncBadge"],["mobSync"]].forEach(([id])=>{ const b=$(id); if(!b) return;
+    if(on){ b.textContent="🟢 실시간 공유 중"; b.style.color="#8fe0a6"; }
+    else { b.textContent="PC 개별 저장"; b.style.color="#7b8da6"; }
+  });
 }
 
 // ── 대시보드 초기화 ──
@@ -2005,9 +2267,10 @@ function setSyncBadge(on){
   ["dsType","dsPlace","dsTime"].forEach(id=>$(id).addEventListener("input",saveSit));
   $("dsLevel").addEventListener("change",saveSit);
   $("logInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addLog(); } });
+  $("loadFile").addEventListener("change",e=>{ const f=e.target.files[0]; loadBoardData(f); e.target.value=""; });
   $("newsQuery").value=window.NEWS_QUERY||"동해시 재난 사고";  // '네이버 뉴스' 버튼용(숨김)
-  if($("dmRegion")){ $("dmRegion").value=(window.DISASTER_MSG_REGION||"강원"); $("dmRegion").addEventListener("change",fetchDisasterMsg); }
-  renderLog();
+  if($("dmRegion")){ $("dmRegion").value=(window.DISASTER_MSG_REGION||"동해"); $("dmRegion").addEventListener("change",fetchDisasterMsg); }
+  renderLog(); lRender("res"); lRender("equip");
   const DW=["일","월","화","수","목","금","토"];
   const tick=()=>{ const d=new Date(),p=n=>String(n).padStart(2,"0");
     $("dashClock").textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
@@ -2016,5 +2279,6 @@ function setSyncBadge(on){
   initFirebase();   // 설정되어 있으면 실시간 공유 활성화
 })();
 </script>
+<div id="printArea"></div>
 </body>
 </html>

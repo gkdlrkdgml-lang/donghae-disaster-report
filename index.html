@@ -112,7 +112,7 @@
   .topnav button{background:none;border:none;border-bottom:3px solid transparent;color:var(--dim);padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
   .topnav button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
   /* ░░ 재난상황판 (관제 보드형 — 화면을 꽉 채움) ░░ */
-  .board{display:grid;grid-template-columns:minmax(300px,.85fr) 2fr;grid-template-rows:auto 1fr;gap:12px;
+  .board{display:grid;grid-template-columns:1.35fr 1fr;grid-template-rows:auto 1fr;gap:12px;
     padding:12px 16px;height:calc(100vh - 98px);box-sizing:border-box}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
   .panel>h3{margin:0;padding:12px 16px;font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);flex-shrink:0}
@@ -151,7 +151,7 @@
   .wxchip{font-size:16px;font-weight:700;color:var(--ink);background:#0f2438;border:1px solid #1e3a52;border-radius:7px;padding:5px 11px;white-space:nowrap}
   .wxtime{font-size:12.5px;color:var(--dim);margin-left:auto}
   /* 우측 패널 묶음 */
-  .side{grid-row:2;grid-column:2;display:grid;grid-template-columns:1.1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:0}
+  .side{grid-row:2;grid-column:2;display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:0}
   .side .panel{min-height:0}
   .side .c-log{grid-column:1;grid-row:1 / 3}
   .side .c-dm{grid-column:2;grid-row:1}
@@ -206,7 +206,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07j</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07k</span>
   </div>
 
   <div class="topnav">

@@ -206,7 +206,7 @@
     <div class="dot" id="statusDot"></div>
     <b>동해시 재난안전상황실 · 재난상황 보고서 자동 생성</b>
     <span class="badge">별지 제1호서식 · 오프라인</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07n</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:auto;background:#1c3a24;color:#8fe0a6">v2026.10.07o</span>
   </div>
 
   <div class="topnav">
@@ -1388,12 +1388,13 @@ function showMapByCoords(lat,lng,label){
 }
 // 동해시 주소/장소 → 좌표. 도로명만 입력해도 동해시를 자동으로 붙여 여러 형태로 시도.
 function geocodeDonghae(query, onFound, onFail){
+  const facil=((query||"").match(/\(([^)]+)\)/)||[])[1]||"";   // (시설명) 추출 — 키워드 검색용
   const base=(query||"").replace(/\s*\([^)]*\)\s*/g," ").replace(/\s+/g," ").trim();  // (시설명) 제거
-  if(!base){ onFail&&onFail("empty"); return; }
+  if(!base && !facil){ onFail&&onFail("empty"); return; }
   // ① 수동 지정 좌표(MANUAL_PINS) 우선 — 카카오가 못 찾는 주소 대응
   const pins=window.MANUAL_PINS||{};
   for(const k of Object.keys(pins)){
-    if(k && base.replace(/\s+/g,"").includes(k.replace(/\s+/g,""))){
+    if(k && (base+" "+facil).replace(/\s+/g,"").includes(k.replace(/\s+/g,""))){
       const p=pins[k]; if(p && p.lat && p.lng){ onFound(+p.lat, +p.lng); return; }
     }
   }
@@ -1404,11 +1405,14 @@ function geocodeDonghae(query, onFound, onFail){
       (r.road_address&&r.road_address.address_name), (r.address&&r.address.address_name)].filter(Boolean).join(" "));
   // 주소검색 후보: 반드시 시 이름을 붙여 '동해시' 결과만 나오게 (맨 끝 bare는 넣지 않음)
   const addrCands = hasCity ? [base] : ["강원특별자치도 동해시 "+base, "강원도 동해시 "+base, "동해시 "+base];
-  // 키워드(장소)검색 후보: 카카오맵처럼 입력 그대로도 시도
-  const kwCands   = hasCity ? [base] : ["동해시 "+base, base, "동해 "+base];
+  // 키워드(장소)검색 후보: 카카오맵처럼 입력 그대로도 시도. 시설명(괄호)이 있으면 먼저 시도.
+  let kwCands = hasCity ? [base] : ["동해시 "+base, base, "동해 "+base];
+  if(facil){ kwCands = ["동해시 "+facil, "동해 "+facil, facil].concat(kwCands); }
+  // 동/번지 없이 시설명만 있는 주소(예: '동해시 발한동 (동해프라자)')는 시설명 키워드를 먼저 찾음
+  const kwFirst = !!facil && !/\d/.test(base);
   const geo=new kakao.maps.services.Geocoder();
   const tryKw=(j)=>{
-    if(j>=kwCands.length){ onFail&&onFail("notfound"); return; }
+    if(j>=kwCands.length){ if(kwFirst) tryAddr(0,true); else (onFail&&onFail("notfound")); return; }
     const ps=new kakao.maps.services.Places();
     ps.keywordSearch(kwCands[j], function(data, st){
       if(st===kakao.maps.services.Status.OK && data.length){
@@ -1418,17 +1422,17 @@ function geocodeDonghae(query, onFound, onFail){
       tryKw(j+1);
     });
   };
-  const tryAddr=(i)=>{
-    if(i>=addrCands.length){ tryKw(0); return; }   // 주소 실패 → 키워드 검색으로
+  const tryAddr=(i,last)=>{
+    if(i>=addrCands.length){ if(kwFirst||last){ onFail&&onFail("notfound"); } else { tryKw(0); } return; }   // 주소 실패 → 키워드 검색으로
     geo.addressSearch(addrCands[i], function(result, status){
       if(status===kakao.maps.services.Status.OK && result.length){
         const d=result.filter(is동해)[0]||(hasCity?result[0]:null);   // 동해시 결과만
         if(d){ onFound(parseFloat(d.y), parseFloat(d.x)); return; }
       }
-      tryAddr(i+1);
+      tryAddr(i+1,last);
     });
   };
-  tryAddr(0);
+  if(kwFirst) tryKw(0); else tryAddr(0);
 }
 
 // ── 기상청 단기예보: 좌표→격자 변환 + 초단기실황 조회 ──

@@ -319,7 +319,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08l</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08p</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -865,7 +865,7 @@ function trainVenueRe(text){
     [/공장|사업장|산업|제조|용광로|변전/, /공장|산업|양회|발전/],
     [/경기장|운동장|체육|대회|관중|스포츠\s*센터|스포츠센터|체육관|헬스/, /경기장|운동장|체육|레포츠|스포츠/],
     [/시장|상가|점포|마트|백화|프라자|플라자/, /시장|상가|마트|시네마|프라자|플라자/],
-    [/축제|행사장|행사|공연|집회|관람객|야외\s*행사/, /경기장|운동장|레포츠|공원|해수욕장|광장|캠핑/],  // 축제·행사 → 야외
+    [/축제|행사장|행사|공연|집회|관람객|야외\s*행사/, /축제|행사장|경기장|운동장|레포츠|공원|해수욕장|광장/],  // 축제·행사 → 축제장/야외
     [/국도|지방도|고속도로|도로변|노상|차도|갓길/, /국도|고속도로|대로|도로/],                        // 국도·도로
     [/터미널|기차|열차|역사/, /터미널|역/],
     [/댐|저수지|방류/, /댐|저수지/],
@@ -891,17 +891,23 @@ function pickTrainLoc(){
 function fillTrain(t, loc, mtnType){
   const dong=loc.dong||"○○동", place=loc.place||"훈련장소", mtn=loc.mtn||"";
   const esc=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const placeBare=place.replace(/\s*\([^)]*\)\s*$/,"").trim();          // 괄호 설명 제거한 장소명
+  const sangga = (/(상가|시장|프라자|플라자|마트|백화|센터)$/.test(placeBare)? placeBare : placeBare+" 상가");  // 상가 화재 → '○○ 상가'(이미 상가류면 그대로)
   let out=(t||"")
     .replace(/[△▲]{2}/g,"○○")                                        // △△ → ○○ 로 통일
     // 숫자 00 / 영문 OO 자리표시자 — 반드시 '붙어있는' 형태만 (시각 '19:00'·'100mm' 보호)
-    .replace(/(?:국도\s*)?(?:00|[Oo]{2})호선/g,"국도 7호선")
+    .replace(/국도\s*(?:00|[Oo]{2})호선/g,"국도 42호선").replace(/(?:00|[Oo]{2})호선/g,"42호선")
     .replace(/(?:00|[Oo]{2})시\s*\(?\s*군[,·]?\s*구?\s*\)?|(?:00|[Oo]{2})시군구|(?:00|[Oo]{2})시군|(?:00|[Oo]{2})시(?!장|설|청)/g,"동해시")
     .replace(/(?:00|[Oo]{2})읍면동|(?:00|[Oo]{2})읍|(?:00|[Oo]{2})면|(?:00|[Oo]{2})동|(?:00|[Oo]{2})리/g, dong)
     .replace(/(?:00|[Oo]{2})산/g, mtn||"산")
+    // 훈련상가 → '○○ 상가' (장소 뒤 '상가' 유지)
+    .replace(/(?:○○\s*)?훈련\s*상가/g, sangga)
+    // 훈련 (야외) 축제행사장 → 배정된 축제장
+    .replace(/(?:○○\s*)?훈련\s*(?:야외\s*)?(?:축제\s*)?행사장|야외\s*축제\s*행사장|훈련\s*야외\s*축제행사장/g, place)
     // '훈련○○(건물)' / '○○훈련○○' → 배정된 실제 장소명
-    .replace(/(?:○○\s*)?훈련\s*(?:아파트|상가|빌딩|건물|공장|주택|프라자|플라자|타워|시장|백화점|마트|점포|상회|병원|요양원|학교|호텔|리조트|콘도|펜션|센터|스포츠센터|회관|주유소|충전소|터널|행사장|축제행사장)(?:\s*\(\s*건물\s*\))?/g, place)
+    .replace(/(?:○○\s*)?훈련\s*(?:아파트|빌딩|건물|공장|주택|프라자|플라자|타워|시장|백화점|마트|점포|상회|병원|요양원|학교|호텔|리조트|콘도|펜션|센터|스포츠센터|회관|주유소|충전소|터널)(?:\s*\(\s*건물\s*\))?/g, place)
     // ○○<건물명사> → 배정 장소 (지역치환보다 먼저: '○○시장'→장소, '○○터널'→'지흥터널')
-    .replace(/○○\s*(?:대형\s*)?(?:스포츠\s*)?(?:터널|시장|공장|스포츠센터|센터|아파트|상가|빌딩|주차장|충전소|경기장|병원|학교|행사장|축제행사장)/g, place)
+    .replace(/○○\s*(?:대형\s*)?(?:스포츠\s*)?(?:터널|시장|공장|스포츠센터|센터|아파트|빌딩|주차장|충전소|경기장|병원|학교|행사장|축제행사장)/g, place)
     // ○○ 지역·동·리
     .replace(/○○시\s*\(\s*군[,·]?\s*구?\s*\)|○○\(시군구\)|○○시군구|○○시\/?군|○○시(?!장|설|청)/g,"동해시")
     .replace(/○○구\s*\(\s*읍[,·]?\s*면[,·]?\s*동\s*\)|○○읍\s*\(\s*면[·,]?\s*동\s*\)|○○읍면동|○○읍|○○면|○○동|○○리/g, dong)
@@ -910,9 +916,24 @@ function fillTrain(t, loc, mtnType){
   else { out=out.replace(/\s*\(○○산\)/g, "").replace(/○○산/g, mtn); }
   out=out.replace(/○○천|○○강/g, loc.river).replace(/○○/g, place);
   // 정리: '동해시<동>' 띄어쓰기 보정 + 같은 동 연속 중복 제거 + 다중 공백
-  out=out.replace(/(동해시)([가-힣]+[동읍면리])/g, "$1 $2")
+  out=out.replace(/(동해시)(국도|지방도|고속도로|[가-힣]+[동읍면리])/g, "$1 $2")
          .replace(new RegExp("("+esc(dong)+")(?:\\s+\\1)+","g"), "$1").replace(/ {2,}/g," ").trim();
   return out;
+}
+// 훈련 개요의 별표(*) 피해요약을 '4. 피해상황' 필드로 반영하고, 개요에서는 그 줄을 제거
+function fillTrainDamage(text){
+  if(!text) return text;
+  const m=text.match(/[*＊]\s*([^\n]*(?:인명피해|사망|부상|실종|점포|주택|가옥|피해)[^\n]*)/);
+  const dmg = m ? m[1] : text;
+  const g=(re)=>{ const mm=dmg.match(re); return mm?mm[1]:""; };
+  const tot=g(/인명\s*피해\s*(\d+)\s*명/)||g(/사상자\s*(\d+)/);
+  const dead=g(/사망\s*[:：]?\s*(\d+)/), hurt=g(/부상\s*[:：]?\s*(\d+)/), miss=g(/실종\s*[:：]?\s*(\d+)/);
+  const set=(id,v)=>{ if(v && $(id) && !$(id).value) $(id).value=v; };
+  set("f_in_tot",tot); set("f_in_dead",dead); set("f_in_hurt",hurt); set("f_in_miss",miss);
+  const prop=(dmg.match(/(?:점포|상가|주택|건물|가옥|차량|축사)\s*\d+\s*(?:개소|동|채|대|호|필지)/g)||[]).join(", ");
+  set("f_property", prop);
+  // 개요에서 '* …피해…' 요약 줄 제거 (상황 서술만 남김)
+  return m ? text.replace(/\n?\s*[*＊][^\n]*(?:인명피해|점포|주택|가옥|피해)[^\n]*/g,"").replace(/\s{2,}/g," ").trim() : text;
 }
 // 훈련 메시지 유형 감지
 const TRAIN_TYPES=(window.DISASTER_TYPES||[]);
@@ -984,7 +1005,8 @@ function applyTrainLoc(loc){
   // 상황개요: 훈련메시지 원문을 그대로 유지하고, 장소 자리표시자(○○시 ○○동 등)만 동해시 실제 주소로 치환
   //  (원문이 없을 때만 유형별 기본 문장 사용)
   if(S.gaeyoTmpl && S.gaeyoTmpl.trim()){
-    $("f_gaeyo").value=fillTrain(S.gaeyoTmpl, loc, mtnType);
+    const cleaned=fillTrainDamage(S.gaeyoTmpl);   // 별표 피해요약 → 피해상황 필드 + 개요에서 제거
+    $("f_gaeyo").value=fillTrain(cleaned, loc, mtnType);
   }else{
     const placeForGaeyo=`동해시 ${loc.dong} ${loc.place}`;
     $("f_gaeyo").value=buildGaeyo(S.type, S.time||"○○:○○", placeForGaeyo);
@@ -1221,7 +1243,10 @@ async function generate(){
   // 형식 판별: 기상특보 / 소방 자동전파 / 훈련 메시지
   const isWeather=/\[기상특보\]|기상특보|발표\s*구역|발효시각|발표시각/.test(raw) && /(주의보|경보|특보)/.test(raw);
   const isSobang=/신고일시|발생위치/.test(raw);
-  const isTrain=!isSobang && !isWeather && (/사고일시|상황\s*개요/.test(raw) || (raw.match(/○○/g)||[]).length>=2);
+  // 훈련: ① 훈련 체크박스가 켜졌거나 ② '사고일시/상황개요/훈련' 키워드 ③ 자리표시자(○○·△△·00·OO) 1개 이상
+  const trainChecked = $("training") && $("training").checked;
+  const phCount = (raw.match(/○○|△△/g)||[]).length + (raw.match(/(?:00|[Oo]{2})(?:시|읍|면|동|리|산|호선|훈련)/g)||[]).length;
+  const isTrain=!isSobang && !isWeather && (trainChecked || /사고일시|상황\s*개요|훈련/.test(raw) || phCount>=1);
 
   // ── 기상특보 메시지 → 지휘부 기상특보 문자 자동작성 ──
   if(isWeather && !isSobang){

@@ -271,7 +271,12 @@
     .sclock{margin-left:auto}
   }
   /* 모바일에서는 '보고서 생성' 탭 숨기고 상황판만 (JS가 상황판으로 자동 전환) */
-  @media(max-width:820px){ #navReport{display:none} }
+  @media(max-width:820px){ #navReport{display:none}
+    /* 모바일: 지도 위 기상을 작게 — 한 줄에 들어오게 (제목·시각 숨김, 칩 축소) */
+    #dashWx{top:6px;left:6px;right:6px;gap:4px;padding:4px 7px;flex-wrap:nowrap;overflow:hidden}
+    #dashWx .wxttl,#dashWx .wxtime{display:none}
+    #dashWx .wxchip{font-size:12.5px;font-weight:700;padding:3px 7px;border-radius:6px}
+  }
   /* 모바일 = 보기 전용: 입력·버튼 차단 (데스크톱은 영향 없음) */
   #viewOnlyTag{display:none}
   body.view-only #viewOnlyTag{display:inline-flex;align-items:center;gap:4px;align-self:center;
@@ -319,7 +324,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08t</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08u</span>
   </div>
 
   <div class="wrap" id="pageReport">

@@ -319,7 +319,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08p</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08q</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -923,8 +923,10 @@ function fillTrain(t, loc, mtnType){
 // 훈련 개요의 별표(*) 피해요약을 '4. 피해상황' 필드로 반영하고, 개요에서는 그 줄을 제거
 function fillTrainDamage(text){
   if(!text) return text;
-  const m=text.match(/[*＊]\s*([^\n]*(?:인명피해|사망|부상|실종|점포|주택|가옥|피해)[^\n]*)/);
-  const dmg = m ? m[1] : text;
+  // 피해 요약(별표 '*') 줄이 '있을 때만' 반영 — 없으면 개요 그대로 두고 피해칸은 비움
+  const m=text.match(/[*＊]\s*([^\n]*(?:인명피해|사상자|사망|부상|실종|점포|주택|가옥|재산피해)[^\n]*)/);
+  if(!m) return text;
+  const dmg = m[1];
   const g=(re)=>{ const mm=dmg.match(re); return mm?mm[1]:""; };
   const tot=g(/인명\s*피해\s*(\d+)\s*명/)||g(/사상자\s*(\d+)/);
   const dead=g(/사망\s*[:：]?\s*(\d+)/), hurt=g(/부상\s*[:：]?\s*(\d+)/), miss=g(/실종\s*[:：]?\s*(\d+)/);
@@ -932,8 +934,8 @@ function fillTrainDamage(text){
   set("f_in_tot",tot); set("f_in_dead",dead); set("f_in_hurt",hurt); set("f_in_miss",miss);
   const prop=(dmg.match(/(?:점포|상가|주택|건물|가옥|차량|축사)\s*\d+\s*(?:개소|동|채|대|호|필지)/g)||[]).join(", ");
   set("f_property", prop);
-  // 개요에서 '* …피해…' 요약 줄 제거 (상황 서술만 남김)
-  return m ? text.replace(/\n?\s*[*＊][^\n]*(?:인명피해|점포|주택|가옥|피해)[^\n]*/g,"").replace(/\s{2,}/g," ").trim() : text;
+  // 개요에서 '* …피해…' 요약 줄만 제거 (상황 서술은 그대로)
+  return text.replace(/\n?\s*[*＊][^\n]*(?:인명피해|점포|주택|가옥|재산피해)[^\n]*/g,"").replace(/[ \t]{2,}/g," ").trim();
 }
 // 훈련 메시지 유형 감지
 const TRAIN_TYPES=(window.DISASTER_TYPES||[]);

@@ -319,7 +319,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08r</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.08s</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -2468,9 +2468,11 @@ async function initFirebase(){
     });
     // 동원 인력·장비 실시간 구독
     fbDB.ref("resources").on("value",snap=>{ const v=snap.val()||{};
-      fbRes=Object.keys(v).map(k=>({id:k, a:v[k].a||"", n:v[k].n||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts); lRender("res"); });
+      fbPurgeEmpty("resources",v);
+      fbRes=Object.keys(v).map(k=>({id:k, a:v[k].a||"", n:v[k].n||"", ts:v[k].ts||0})).filter(r=>r.a||r.n).sort((a,b)=>a.ts-b.ts); lRender("res"); });
     fbDB.ref("equips").on("value",snap=>{ const v=snap.val()||{};
-      fbEquip=Object.keys(v).map(k=>({id:k, a:v[k].a||"", n:v[k].n||"", ts:v[k].ts||0})).sort((a,b)=>a.ts-b.ts); lRender("equip"); });
+      fbPurgeEmpty("equips",v);
+      fbEquip=Object.keys(v).map(k=>({id:k, a:v[k].a||"", n:v[k].n||"", ts:v[k].ts||0})).filter(r=>r.a||r.n).sort((a,b)=>a.ts-b.ts); lRender("equip"); });
     // 현재 상황 실시간 구독
     fbDB.ref("situation").on("value",snap=>{ applyRemoteSit(snap.val()); });
     // 지도 그린 주석 실시간 구독 (내가 그리는 중이면 덮어쓰지 않음)
@@ -2478,6 +2480,8 @@ async function initFirebase(){
     fbReady=true; setSyncBadge(true);
   }catch(e){ console.warn("Firebase 연결 실패:",e); fbReady=false; setSyncBadge(false); }
 }
+// 예전 버그로 빈칸(a·n 모두 없음) 저장된 동원 데이터를 공유 DB에서 자동 정리
+function fbPurgeEmpty(ref,v){ try{ Object.keys(v).forEach(k=>{ const o=v[k]||{}; if(!(o.a||o.n)) fbDB.ref(ref+"/"+k).remove(); }); }catch(e){} }
 function setSyncBadge(on){
   [["syncBadge"],["mobSync"]].forEach(([id])=>{ const b=$(id); if(!b) return;
     if(on){ b.textContent="🟢 실시간 공유 중"; b.style.color="#8fe0a6"; }

@@ -299,7 +299,10 @@
     #dashWx .wxtime{display:none}
     #dashWx .wxttl{font-size:10.5px;margin-right:0}
     #dashWx .wxchip{font-size:12.5px;font-weight:700;color:#fff;padding:3px 7px;border-radius:6px}
-  }
+    /* 모바일: 상황일지 행 = 시각 윗줄 + 내용 아랫줄 전체폭 (좁은 칸 글자 깨짐 방지) */
+    .side .logrow{flex-direction:column;align-items:stretch;gap:2px;padding:9px 2px}
+    .side .logrow .lt{font-size:14px;font-weight:800;background:none;color:var(--ac);padding:0;align-self:flex-start}
+    .side .logrow .lx{font-size:17px;width:100%;flex:none;line-height:1.5;word-break:keep-all;overflow-wrap:break-word;white-space:normal}
   /* 모바일 = 보기 전용: 입력·버튼 차단 (데스크톱은 영향 없음) */
   #viewOnlyTag{display:none}
   body.view-only #viewOnlyTag{display:inline-flex;align-items:center;gap:4px;align-self:center;
@@ -347,7 +350,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10d</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10f</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -2174,12 +2177,15 @@ function lRender(k){ const c=LCFG[k]; const box=$(c.list); if(!box)return;
       `<tr><td class="mc-a" contenteditable="${ce}" data-id="${r.id}" data-f="a">${escapeHtml(r.a||"")}</td>`+
       `<td class="mc-n" contenteditable="${ce}" data-id="${r.id}" data-f="n">${escapeHtml(r.n||"")}</td>`+
       `<td class="mc-x"><button class="ld" title="삭제" onclick="lDel('${k}','${r.id}')">×</button></td></tr>`).join("");
+  // 입력 전(빈칸)에는 '확인 중' 기본 표시
+  const emptyRow = rows.length ? "" :
+      `<tr class="mrow-empty"><td class="mc-a" style="color:#8aa0bf;font-weight:600">확인 중</td><td class="mc-n" style="color:#8aa0bf">-</td><td class="mc-x"></td></tr>`;
   const blankRow = VIEW_ONLY ? "" :   // 보기 전용이면 입력줄 없음
       `<tr class="mrow-new"><td class="mc-a" contenteditable="true" data-new="1" data-f="a" data-ph="${c.pha}"></td>`+
       `<td class="mc-n" contenteditable="true" data-new="1" data-f="n" data-ph="${c.phn}"></td><td class="mc-x"></td></tr>`;
   box.innerHTML=
     `<table class="motab"><thead><tr><th>${c.c1}</th><th class="mc-n">${c.c2}</th><th class="mc-x"></th></tr></thead>`+
-    `<tbody>${dataRows}${blankRow}</tbody></table>`;
+    `<tbody>${dataRows}${emptyRow}${blankRow}</tbody></table>`;
   // 기존 행: 수정(blur)·Enter 시 아래 빈줄로 이동
   box.querySelectorAll('td[data-id]').forEach(el=>{
     el.addEventListener("blur",()=>lEdit(k, el.dataset.id, el.dataset.f, el.textContent.trim()));

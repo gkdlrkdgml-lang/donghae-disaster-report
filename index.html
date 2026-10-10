@@ -341,7 +341,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.09a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10a</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -1432,6 +1432,8 @@ function renderJihwi(){
   }
   // ○ 항목마다 줄바꿈 (문자 시스템에 붙여넣으면 한 줄씩 내려가도록)
   out=out.replace(/\s*○/g,"\n○").replace(/\s*(\[[^\]]*재난안전상황실\])\s*$/,"\n$1").replace(/^\n+/,"").trim();
+  // 상황 발생보고 문자(재난상황)에는 맨 끝에 외부유출 금지 문구 자동 추가 (기상특보·영상송출 제외)
+  if(jKind!=="weather" && jKind!=="video") out += "\n※ 해당 내용 외부유출 금지";
   $("jOut").value=out;
   $("jCnt").textContent=`${[...out].length}자 · 약 ${byteLen(out)}바이트`;
 }

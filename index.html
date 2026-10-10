@@ -341,7 +341,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10b</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10c</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -536,6 +536,7 @@
             <div class="row">
               <span class="cnt" id="cbsCnt"></span>
               <button class="cbtn" id="cbsCopy">문자 복사</button>
+              <button class="cbtn" id="cbsSend" style="background:#c0392b;color:#fff" title="재난문자 발송시스템(KPAS) 새 창으로 열기" onclick="window.open(window.CBS_SYSTEM_URL||'https://kpas.ndms.go.kr/IDSP/','_blank','noopener')">📤 발송시스템</button>
             </div>
             <div class="hint">행정안전부 표준문안 기반. ○○(지역·시각·시설명)은 신고내역에서 자동 반영됩니다. 유형에 안 맞는 시설명 치환이나 발송 여부는 직접 확인하세요.</div>
           </div>

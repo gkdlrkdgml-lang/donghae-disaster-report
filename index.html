@@ -341,7 +341,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10b</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -1517,6 +1517,7 @@ async function aiPolishJihwi(){
 }
 // 보고서 생성 시 지휘부 탭에 상황 정보 자동 채우기
 function prefillJihwi(type, dateStr, place, detail, prog){
+  switchJKind("incident");   // 보고서 생성 시 지휘부 문자를 '상황발생보고' 모드로 되돌림(외부유출 문구 포함)
   // 재난유형 → 지휘부 유형 매핑
   const map={"화재":"화재","폭발":"화재","산불":"산불","산사태":"붕괴","붕괴":"붕괴",
     "침수":"침수","호우·침수":"침수","유해화학물질":"유해화학물질","정전":"정전",

@@ -234,6 +234,12 @@
   .dbtn{background:var(--cyan);color:#04101F;border:none;border-radius:7px;padding:10px 15px;font-weight:800;font-size:14.5px;cursor:pointer;font-family:inherit}
   .dbtn.ghost{background:#1b2838;color:var(--ink);border:1px solid var(--line)}
   .dbtn.ghost.on{background:var(--cyan);color:#04101F;border-color:var(--cyan)}
+  /* 상황일지 자주쓰는 문구(매크로) */
+  #logMacros{display:flex;flex-wrap:wrap;gap:6px;padding:8px 2px 2px}
+  #logMacros .lmac{background:#15283f;border:1px solid #2a567e;color:#dce9ff;border-radius:999px;padding:7px 13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+  #logMacros .lmac:hover{background:#1d3a5c;border-color:var(--cyan)}
+  #logMacros .lmac .lmn{color:#8fd0ff;font-weight:800;margin-right:5px}
+  body.view-only #logMacros{display:none !important}
   .dbtn.sm{padding:8px 12px;font-size:13.5px}
   .logrow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
   .logrow .lt{font-size:16px;color:var(--cyan);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:1px}
@@ -341,7 +347,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10c</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.10d</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -614,7 +620,9 @@
           <button class="dbtn sm" onclick="addLog()">＋ 추가</button>
           <button class="dbtn ghost sm" onclick="copyLog()">📋 복사</button>
           <button class="dbtn ghost sm" onclick="clearLog()">전체삭제</button>
+          <button class="dbtn ghost sm" id="logMacroBtn" title="자주 쓰는 문구를 현재 시각으로 기록" onclick="toggleLogMacros(this)">⚡ 자주쓰는 문구</button>
         </div>
+        <div id="logMacros" style="display:none"></div>
       </div>
       <!-- 동원 인력·장비 -->
       <div class="panel c-mob">
@@ -2060,6 +2068,29 @@ function addLog(){
   if(fbReady){ fbDB.ref("logs").push(entry); }   // 실시간 공유
   else { const logs=getLogs(); logs.push({...entry, id:Date.now()}); setLogs(logs); }
   $("logInput").value=""; if($("logTime")) $("logTime").value=""; $("logInput").focus();
+}
+// ── 자주 쓰는 문구(매크로) — 클릭하면 현재 시각으로 상황일지에 자동 기록 ──
+const LOG_MACROS = window.LOG_MACROS || [
+  "안전정보센터 NDMS로 상황접수",
+  "소방·경찰 CCTV 영상전파",
+  "안전정보센터 당직실 상황보고",
+  "안전정보센터 재난보고 대상자 문자전송",
+  "행정안전부 및 강원특별자치도 상황보고서 발송",
+];
+function renderLogMacros(){ const box=$("logMacros"); if(!box)return;
+  box.innerHTML=LOG_MACROS.map((m,i)=>'<button class="lmac" onclick="quickLog('+i+')"><span class="lmn">'+(i+1)+'</span>'+escapeHtml(m)+'</button>').join("");
+}
+function toggleLogMacros(btn){ const box=$("logMacros"); if(!box)return;
+  const show=box.style.display==="none"; box.style.display=show?"flex":"none";
+  if(btn) btn.classList.toggle("on",show);
+  if(show && !box.innerHTML) renderLogMacros();
+}
+function quickLog(i){ const t=(LOG_MACROS[i]||"").trim(); if(!t)return;
+  const tm=($("logTime")&&$("logTime").value.trim())||nowHM();   // 수동 시각 있으면 우선, 없으면 현재 시각
+  const entry={t:tm, x:t, ts:Date.now()};
+  if(fbReady){ fbDB.ref("logs").push(entry); }
+  else { const logs=getLogs(); logs.push({...entry, id:Date.now()}); setLogs(logs); }
+  if($("logTime")) $("logTime").value="";
 }
 function delLog(id){
   if(fbReady){ fbDB.ref("logs/"+id).remove(); }

@@ -137,6 +137,24 @@
   .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:20px;font-weight:900;padding:4px 13px;border-radius:9px;white-space:nowrap}
   .boardbtns{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:430px}
   .boardbtns .dbtn{padding:6px 10px;font-size:12.5px;white-space:nowrap}
+  /* 가져오기 확인·복원 대화상자 */
+  #bkDlg{position:fixed;inset:0;z-index:9000;background:rgba(3,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px}
+  #bkDlg .bkw{background:#111d31;border:1px solid #2a567e;border-radius:14px;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  #bkDlg h4{margin:0 0 6px;font-size:18px;color:#fff}
+  #bkDlg .bkd{font-size:13px;color:#9fb0cc;line-height:1.6;margin-bottom:12px}
+  #bkDlg table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0 14px}
+  #bkDlg th,#bkDlg td{border-top:1px solid #213a58;padding:7px 8px;text-align:left;vertical-align:top}
+  #bkDlg th{color:#7b8da6;font-weight:600;width:72px;white-space:nowrap}
+  #bkDlg td.o{color:#c9d6e8} #bkDlg td.n{color:#ffd27a;font-weight:700} #bkDlg td.same{color:#6f8299}
+  #bkDlg .bkb{display:flex;flex-direction:column;gap:8px}
+  #bkDlg .bkb button{text-align:left;padding:11px 14px;border-radius:9px;border:1px solid #2a567e;background:#15283f;color:#e6efff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.4}
+  #bkDlg .bkb button small{display:block;font-weight:400;color:#9fb0cc;font-size:12px;margin-top:2px}
+  #bkDlg .bkb button:hover{border-color:#5ab8ff;background:#1a3352}
+  #bkDlg .bkb button.pri{border-color:#3da9fc;background:#123a5e}
+  #bkDlg .bkb button.cancel{background:none;border-color:#33465f;color:#9fb0cc;text-align:center;font-weight:600}
+  #bkDlg .bki{display:flex;gap:10px;align-items:center;padding:9px 4px;border-top:1px solid #213a58;font-size:13px;color:#dce6f5}
+  #bkDlg .bki .t{flex:1;min-width:0;line-height:1.5} #bkDlg .bki .t b{color:#fff} #bkDlg .bki .t span{color:#8fa3bf;font-size:12px}
+  #bkDlg .bki button{flex-shrink:0;padding:6px 12px;border-radius:7px;border:1px solid #3da9fc;background:#123a5e;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
   .lvl-0{background:#2a3647;color:#9fb4d4} .lvl-관심{background:#1c3a5a;color:#8fd0ff}
   .lvl-주의{background:#4a4210;color:#ffe08a} .lvl-경계{background:#5a3210;color:#ffb27a} .lvl-심각{background:#5a1518;color:#ff9a9c;animation:pulse 1.4s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #e5484d55}50%{box-shadow:0 0 0 7px #e5484d00}}
@@ -461,7 +479,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.20c</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.21a</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -687,9 +705,11 @@
           <button class="dbtn ghost sm" onclick="printBoard()">🖨 출력</button>
           <button class="dbtn ghost sm" onclick="saveBoardData()">💾 저장</button>
           <button class="dbtn ghost sm" onclick="document.getElementById('loadFile').click()">📂 불러오기</button>
+          <button class="dbtn ghost sm" onclick="openBackups()" title="가져오기·초기화·불러오기 전 상태와 5분마다 자동 백업된 상황판으로 되돌립니다">↩ 복원</button>
           <button class="dbtn ghost sm" style="border-color:#7a3b3b;color:#ff9a9c" onclick="resetBoard()">🗑 초기화</button>
         </div>
         <input type="file" id="loadFile" accept="application/json,.json" style="display:none">
+        <div id="bkDlg" onclick="if(event.target===this)bkClose()"><div class="bkw" id="bkW"></div></div>
       </div>
       <div class="sclock"><div class="ct" id="dashClock">--:--:--</div><div class="cd" id="dashDate"></div></div>
     </div>
@@ -2055,6 +2075,34 @@ function renderLevelPill(){
   p.textContent="● "+(v==="0"?"상황없음":v+" 단계");
 }
 function pullFromReport(){
+  const cur={type:($("dsType").value||"").trim(), place:($("dsPlace").value||"").trim(), time:($("dsTime").value||"").trim()};
+  const nw={type:(window.__reportType||"").trim()||cur.type, place:($("f_jangso").value||"").trim()||cur.place, time:($("f_ilsi").value||"").trim()||cur.time};
+  if(!nw.type && !($("f_jangso").value||"").trim()){ alert("보고서 생성 탭에 가져올 내용이 없습니다.\n먼저 보고서 탭에서 상황유형·발생장소를 입력하세요."); return; }
+  const st=boardStats(), filled=!!(cur.type||cur.place||st.logs||st.res||st.equip||st.spots);
+  const changed=(cur.type!==nw.type)||(cur.place!==nw.place)||(cur.time!==nw.time);
+  if(!filled){ doPullFromReport(); return; }                 // 빈 상황판 → 바로 가져오기
+  if(!changed){ doPullFromReport(); return; }                // 같은 상황 → 지도·언론만 갱신
+  // 기존 내용이 있고 다른 상황 → 선택
+  const row=(k,a,b)=>'<tr><th>'+k+'</th><td class="o">'+escapeHtml(a||"-")+'</td><td class="'+(a===b?'same':'n')+'">'+escapeHtml(b||"-")+'</td></tr>';
+  bkOpen('<h4>📄 보고서 내용을 상황판으로 가져오기</h4>'+
+    '<div class="bkd">상황판에 이미 작성 중인 내용이 있습니다 — 상황일지 <b>'+st.logs+'건</b>, 동원 인력 '+st.res+'건·장비 '+st.equip+'건'+(st.spots?', 지도 지점 '+st.spots+'곳':'')+'</div>'+
+    '<table><tr><th></th><th>현재 상황판</th><th>가져올 내용</th></tr>'+row("상황유형",cur.type,nw.type)+row("발생장소",cur.place,nw.place)+row("발생일시",cur.time,nw.time)+'</table>'+
+    '<div class="bkb">'+
+    '<button class="pri" onclick="bkClose();pullKeep()">같은 사고 — 요약만 바꾸기<small>상황일지·동원현황·지도 지점은 그대로 두고 유형·장소·일시만 바꿉니다</small></button>'+
+    '<button onclick="bkClose();pullNew()">다른 사고 — 새 상황으로 시작<small>지금 상황판을 백업한 뒤 일지·동원·지점을 비우고 새로 시작합니다 (↩ 복원으로 되돌릴 수 있음)</small></button>'+
+    '<button class="cancel" onclick="bkClose()">취소</button></div>');
+}
+function pullKeep(){ boardBackup("가져오기 전"); doPullFromReport(); }
+function pullNew(){
+  boardBackup("새 상황 시작 전");
+  if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); fbDB.ref("draw").remove(); fbDB.ref("spots").remove(); }
+  else { LS.set("dh_log",[]); LS.set("dh_res",[]); LS.set("dh_equip",[]); renderLog(); lRender("res"); lRender("equip"); }
+  drawStrokes=[]; try{ pushDraw(); redrawMapDraw(); }catch(e){}
+  spots=[]; LS.set("dh_spots",[]); renderSpots();
+  $("dsLevel").value="0";
+  doPullFromReport();
+}
+function doPullFromReport(){
   // 상황유형: 유형만 간결하게(건물화재·산악사고 등). 주소는 발생장소 칸에 별도 표시.
   $("dsType").value=window.__reportType||$("dsType").value;
   if($("f_jangso").value)$("dsPlace").value=$("f_jangso").value;
@@ -2517,7 +2565,8 @@ function renderLog(){
 }
 function clearLog(){
   if(!activeLogs().length) return;
-  if(!confirm("상황 일지를 모두 지울까요?"+(fbReady?" (공유 중이면 모든 화면에서 삭제됩니다)":""))) return;
+  if(!confirm("상황 일지를 모두 지울까요?"+(fbReady?" (공유 중이면 모든 화면에서 삭제됩니다)":"")+"\n지금 내용은 자동 백업되어 '↩ 복원'으로 되돌릴 수 있습니다.")) return;
+  boardBackup("일지 전체삭제 전");
   if(fbReady){ fbDB.ref("logs").remove(); } else { setLogs([]); }
 }
 function copyLog(){
@@ -2590,7 +2639,8 @@ function lRender(k){ const c=LCFG[k]; const box=$(c.list); if(!box)return;
 }
 // ── 상황판 초기화 — 모든 기록 삭제 + '상황없음' ──
 function resetBoard(){
-  if(!confirm("⚠ 상황판 초기화\n\n현재 상황판의 모든 기록이 삭제되고 '상황없음'으로 돌아갑니다.\n · 상황 요약(유형·장소·일시·단계)\n · 상황 일지 · 조치사항\n · 동원 인력 / 장비\n\n공유 중이면 모든 화면에서 함께 지워집니다.\n계속하시겠습니까?")) return;
+  if(!confirm("⚠ 상황판 초기화\n\n현재 상황판의 모든 기록이 삭제되고 '상황없음'으로 돌아갑니다.\n · 상황 요약(유형·장소·일시·단계)\n · 상황 일지 · 조치사항\n · 동원 인력 / 장비\n\n지금 내용은 자동 백업되어 '↩ 복원'으로 되돌릴 수 있습니다.\n공유 중이면 모든 화면에서 함께 지워집니다.\n계속하시겠습니까?")) return;
+  boardBackup("초기화 전");
   if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); fbDB.ref("draw").remove(); fbDB.ref("spots").remove(); }
   else { LS.set("dh_log",[]); LS.set("dh_res",[]); LS.set("dh_equip",[]); renderLog(); lRender("res"); lRender("equip"); }
   spots=[]; LS.set("dh_spots",[]); renderSpots();
@@ -2836,8 +2886,8 @@ function togglePanelFull(cls, btn){
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ document.querySelectorAll(".panel-full").forEach(p=>{ p.classList.remove("panel-full"); const b=p.querySelector('h3 button[onclick*="togglePanelFull"]'); if(b){ b.textContent="⛶"; b.title="전체화면"; } }); if(dashMap) setTimeout(()=>dashMap.relayout(),90); } });
 
 // ── 상황판 데이터 저장(파일) / 불러오기 ──
-function saveBoardData(){
-  const data={
+function boardSnapshot(){
+  return {
     kind:"donghae-board", v:1, savedAt:new Date().toISOString(),
     sit:{ type:$("dsType").value, place:$("dsPlace").value, time:$("dsTime").value, level:$("dsLevel").value },
     logs: activeLogs().map(l=>({t:l.t||"", x:l.x||"", ts:l.ts||+l.id||0})),
@@ -2847,6 +2897,9 @@ function saveBoardData(){
     draw: drawStrokes,   // 지도에 그린 주석
     spots: spots,        // 확산·다중 지점
   };
+}
+function saveBoardData(){
+  const data=boardSnapshot();
   const now=new Date(), p=n=>String(n).padStart(2,"0");
   const name=`재난상황판_${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.json`;
   saveBlob(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}), name);
@@ -2857,7 +2910,15 @@ function loadBoardData(file){
   rd.onload=()=>{
     let d; try{ d=JSON.parse(rd.result); }catch(e){ alert("불러올 수 없는 파일입니다. (JSON 형식 아님)"); return; }
     if(!d || d.kind!=="donghae-board" || !d.sit){ if(!confirm("재난상황판 저장 파일이 아닌 것 같습니다. 그래도 불러올까요?")) return; d=d||{}; d.sit=d.sit||{}; }
-    if(!confirm("저장된 상황판 내용으로 불러옵니다.\n현재 표시 중인 내용은 대체됩니다.\n(공유 중이면 모든 화면에 반영됩니다)\n\n계속할까요?")) return;
+    if(!confirm("저장된 상황판 내용으로 불러옵니다.\n현재 표시 중인 내용은 대체됩니다. (지금 내용은 자동 백업 → ↩ 복원 가능)\n(공유 중이면 모든 화면에 반영됩니다)\n\n계속할까요?")) return;
+    boardBackup("불러오기 전");
+    applyBoardData(d);
+    alert("✓ 불러오기 완료 — 상황판에 표시했습니다."+(d.savedAt?`\n(저장 시각: ${new Date(d.savedAt).toLocaleString("ko-KR")})`:""));
+  };
+  rd.readAsText(file);
+}
+function applyBoardData(d){
+    d=d||{}; d.sit=d.sit||{};
     // 상황 요약
     $("dsType").value=d.sit.type||""; $("dsPlace").value=d.sit.place||""; $("dsTime").value=d.sit.time||""; $("dsLevel").value=d.sit.level||"0";
     saveSit();
@@ -2882,9 +2943,48 @@ function loadBoardData(file){
     pushDraw();
     spots = normSpots(d.spots); pushSpots();
     setTimeout(()=>{ resizeDrawCanvas(); }, 250);
-    alert("✓ 불러오기 완료 — 상황판에 표시했습니다."+(d.savedAt?`\n(저장 시각: ${new Date(d.savedAt).toLocaleString("ko-KR")})`:""));
-  };
-  rd.readAsText(file);
+}
+
+// ── 자동 백업·복원 (이 PC에 최근 상태 보관) ──
+// 가져오기(새 상황)·초기화·불러오기·일지 전체삭제·복원 직전, 그리고 5분마다 바뀐 내용이 있으면 자동 저장
+const BK_KEY="dh_backups", BK_MAX=20;
+function boardStats(d){ d=d||null;
+  if(d) return {logs:(d.logs||[]).length, res:(d.res||[]).length, equip:(d.equip||[]).length, spots:(d.spots||[]).length};
+  return {logs:activeLogs().length, res:lActive("res").length, equip:lActive("equip").length, spots:(spots||[]).length}; }
+function boardEmpty(d){ const st=boardStats(d), si=(d?d.sit:{type:$("dsType").value,place:$("dsPlace").value})||{};
+  return !(st.logs||st.res||st.equip||st.spots||(si.type||"").trim()||(si.place||"").trim()); }
+function bkSig(d){ return JSON.stringify([d.sit,d.logs,d.res,d.equip,d.spots,(d.draw||[]).length]); }
+function boardBackup(why){
+  try{
+    const d=boardSnapshot(); if(boardEmpty(d)) return false;
+    const list=LS.get(BK_KEY,[])||[]; const sig=bkSig(d);
+    if(list[0] && list[0].sig===sig){ if(why && !/자동/.test(why)) { list[0].why=why; list[0].at=Date.now(); LS.set(BK_KEY,list); } return true; }   // 같은 내용이면 중복 저장 안 함
+    list.unshift({at:Date.now(), why:why||"자동", sig, data:d});
+    while(list.length>BK_MAX) list.pop();
+    LS.set(BK_KEY,list); return true;
+  }catch(e){ console.warn("백업 실패",e); return false; }
+}
+setInterval(()=>{ if(!VIEW_ONLY && document.visibilityState!=="hidden") boardBackup("자동 (5분)"); }, 300000);
+window.addEventListener("beforeunload",()=>{ if(!VIEW_ONLY) boardBackup("창 닫기 전"); });
+function bkOpen(html){ $("bkW").innerHTML=html; $("bkDlg").style.display="flex"; }
+function bkClose(){ $("bkDlg").style.display="none"; $("bkW").innerHTML=""; }
+function openBackups(){
+  const list=LS.get(BK_KEY,[])||[];
+  const p=n=>String(n).padStart(2,"0");
+  const fmt=t=>{ const d=new Date(t); return (d.getMonth()+1)+"."+d.getDate()+" "+p(d.getHours())+":"+p(d.getMinutes()); };
+  let h='<h4>↩ 상황판 복원</h4><div class="bkd">이 PC에 자동 보관된 상황판입니다 (최근 '+BK_MAX+'개). 복원하면 지금 내용도 먼저 백업되므로 다시 되돌릴 수 있습니다.'+(fbReady?'<br>공유 중이면 복원한 내용이 모든 화면에 반영됩니다.':'')+'</div>';
+  if(!list.length) h+='<div class="bkd" style="color:#c9d6e8">아직 백업이 없습니다. 상황판에 내용이 생기면 5분마다, 그리고 가져오기·초기화·불러오기 직전에 자동으로 보관됩니다.</div>';
+  list.forEach((b,i)=>{ const d=b.data||{}, si=d.sit||{}, st=boardStats(d);
+    h+='<div class="bki"><div class="t"><b>'+fmt(b.at)+'</b> · '+escapeHtml(b.why||"")+'<br>'+escapeHtml((si.type||"유형 없음")+" / "+(si.place||"장소 없음"))+'<br><span>상황일지 '+st.logs+'건 · 인력 '+st.res+' · 장비 '+st.equip+(st.spots?' · 지점 '+st.spots:'')+(d.logs&&d.logs.length?' — 마지막: '+escapeHtml(((d.logs[d.logs.length-1].t||"")+" "+(d.logs[d.logs.length-1].x||"")).slice(0,40)):'')+'</span></div><button onclick="restoreBackup('+i+')">복원</button></div>'; });
+  h+='<div class="bkb" style="margin-top:12px"><button class="cancel" onclick="bkClose()">닫기</button></div>';
+  bkOpen(h);
+}
+function restoreBackup(i){
+  const list=LS.get(BK_KEY,[])||[]; const b=list[i]; if(!b) return;
+  if(!confirm("이 시점의 상황판으로 되돌릴까요?\n지금 내용은 먼저 백업됩니다.")) return;
+  const keep=b.data;
+  boardBackup("복원 전");
+  bkClose(); applyBoardData(keep);
 }
 
 // ── 상황판 전체 출력(인쇄) — 백지 양식으로 깔끔하게 ──

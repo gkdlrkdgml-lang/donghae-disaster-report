@@ -29,7 +29,7 @@
   .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
   .tag{font-size:11px;color:var(--green);border:1px solid #2e9e5b55;background:#2e9e5b18;border-radius:999px;padding:2px 9px}
   .msg{font-size:12px;margin-top:8px}
-  .msg.warn{color:var(--amber)} .msg.err{color:var(--red)}
+  .msg.warn{color:var(--amber)} .msg.err{color:var(--red)} .msg.ok{color:#5be3a0}
   .set-row{display:flex;flex-direction:column;gap:11px}
   .chk{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
   .actions{display:flex;gap:8px;margin-bottom:6px}
@@ -479,7 +479,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.21a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.21c</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -1416,6 +1416,20 @@ function parseWeatherAlert(text){
   if(gw){ R.area="강원("+gw[1].replace(/\s*,\s*/g,",")+")"; }
   else if(areaBlock){ R.area=areaBlock.slice(0,60); }
   else R.area="";
+  // 제목에 특보가 여러 개면 모두 (예: 호우주의보·강풍주의보)
+  R.all=[]; (titleLine.match(/(풍랑|강풍|대설|호우|한파|폭염|건조|태풍|폭풍해일|해일|안개|황사)\s*(주의보|경보|예비특보)/g)||[]).forEach(x=>{ x=x.replace(/\s+/g,""); if(R.all.indexOf(x)<0) R.all.push(x); });
+  // 동해시 포함 여부 — 육상: 동해(시)평지·산지, 해상: 강원남부앞바다·동해중부안쪽/바깥먼바다
+  //  ※ '동해중부앞바다' 같은 바다 이름의 '동해'는 동해시가 아니므로 육상은 '평지/산지'가 붙은 것만 인정
+  const zones=[];
+  const addZ=z=>{ if(zones.indexOf(z)<0) zones.push(z); };
+  (text.match(/동해\s*시?\s*(평지|산지)/g)||[]).forEach(x=>addZ("동해"+(/산지/.test(x)?"산지":"평지")));
+  (text.match(/강원\s*남부\s*앞바다|동해\s*중부\s*안쪽\s*먼바다|동해\s*중부\s*바깥\s*먼바다/g)||[]).forEach(x=>addZ(x.replace(/\s+/g,"")));
+  const allGW=/강원(특별자치)?도?\s*(전역|전\s*지역|전체)/.test(text);
+  const dhWord=/동해시/.test(areaBlock||"") || /강원\s*\([^)]*동해[^)]*\)/.test(text.replace(/동해\s*(중부|남부|북부)/g,"＿"));
+  const ORD=["동해평지","동해산지","강원남부앞바다","동해중부안쪽먼바다","동해중부바깥먼바다"];
+  R.dhZones=zones.sort((a,b)=>ORD.indexOf(a)-ORD.indexOf(b));
+  R.hasArea=!!(areaBlock || zones.length || /발표\s*구역|특보\s*구역/.test(text));
+  R.donghae = zones.length>0 || allGW || dhWord;
   return R;
 }
 
@@ -1440,16 +1454,26 @@ async function generate(){
     $("jwLevel").value=W.warnLevel||"주의보";
     $("jwMode").value=W.mode||"issue";
     $("jwTime").value=W.time||"";
-    // 발표구역: 특보 종류별 동해시 구역 자동 지정 (표에 없으면 기본값, 그래도 없으면 추출값)
+    // 발표구역: 통보문에서 찾은 동해시 구역(동해평지·동해산지·해상) 우선 → 없으면 특보 종류별 기본값
     const areaMap=JW.areaByType||{};
-    $("jwArea").value=areaMap[W.warnType]||JW.areaDefault||W.area||"";
+    const dflt=areaMap[W.warnType]||JW.areaDefault||"";
+    const isSea=/풍랑|해일/.test(W.warnType||"");
+    const dz=(W.dhZones||[]).filter(z=>isSea ? /바다/.test(z) : !/바다/.test(z));
+    if(W.donghae) $("jwArea").value = dz.length ? dz.join(isSea?" 및 ":", ") : dflt;
+    else $("jwArea").value = W.hasArea ? (W.area||dflt) : dflt;
     renderJihwi();
     $("msgTabs").style.display="flex";
     showMsgTab("jihwi");
     const warnFull=(W.warnType||"")+(W.warnLevel||"");
     const act=W.mode==="release"?"해제":"발표";
-    $("tags").innerHTML=`<span class="tag">✓ 기상특보</span><span class="tag">✓ ${warnFull} ${act}</span>`;
-    showMsg("기상특보 메시지로 인식했습니다. 지휘부 안내문자(기상특보)를 작성했어요. 발표구역은 강원 부분만 추출했으니 확인·수정하세요.","warn");
+    const dhTag = W.donghae ? `<span class="tag">✓ 동해시 포함${dz.length?" ("+escapeHtml(dz.join(", "))+")":""}</span>`
+                : (W.hasArea ? `<span class="tag" style="background:#5a1c1c;border-color:#e5484d;color:#ffb3b5">⚠ 동해시 미포함</span>` : `<span class="tag">발표구역 확인 필요</span>`);
+    $("tags").innerHTML=`<span class="tag">✓ 기상특보</span><span class="tag">✓ ${escapeHtml(warnFull)} ${act}</span>`+dhTag+
+      ((W.all||[]).length>1?`<span class="tag">특보 ${W.all.length}건: ${escapeHtml(W.all.join("·"))}</span>`:"");
+    const more=(W.all||[]).length>1 ? ` 이 통보문에 ${W.all.join("·")} ${W.all.length}건이 함께 있어 첫 번째(${warnFull})로 작성했습니다 — 나머지는 '특보' 칸에서 바꿔 작성하세요.` : "";
+    if(W.donghae) showMsg(`기상특보(${warnFull} ${act}) — 동해시가 발표구역에 포함되어 지휘부 안내문자를 작성했습니다.`+(dz.length?` 발표구역: ${dz.join(", ")}`:" 발표구역은 기본값을 넣었으니 확인하세요.")+more, more?"warn":"ok");
+    else if(W.hasArea) showMsg(`⚠ 이번 ${warnFull} ${act}의 발표구역에 동해시가 없습니다 (${W.area||"다른 지역"}). 다른 지역 특보이니 발송 대상인지 확인하세요. 문자는 참고용으로 작성해 두었습니다.`+more,"err");
+    else showMsg(`기상특보(${warnFull} ${act})로 인식했습니다. 발표구역을 찾지 못해 동해시 기본 구역을 넣었으니 확인하세요.`+more,"warn");
     btn.disabled=false;btn.textContent="✦ 메시지 분석 → 보고서 생성";
     return;
   }
@@ -3114,30 +3138,57 @@ async function fetchDisasterMsg(){
     return;
   }
   box.innerHTML='<div class="logempty">재난문자를 불러오는 중…</div>';
-  // 우선순위: ① 중계(앱스스크립트) → ② 직접주소(고급) → ③ 기본 후보
-  let cands;
-  if(proxy){ cands=[ proxy + (proxy.indexOf("?")>=0?"&":"?") + "region=" + encodeURIComponent(region) ]; }
-  else if(window.DISASTER_MSG_URL){ cands=[window.DISASTER_MSG_URL]; }
-  else { cands=[
-    `https://www.safetydata.go.kr/V2/api/DSSP-IF-00247?serviceKey=${key}&pageNo=1&numOfRows=30&returnType=json${region?`&rgnNm=${encodeURIComponent(region)}`:""}`,
-    `https://apis.data.go.kr/1741000/DisasterMsg3/getDisasterMsg1List?serviceKey=${key}&type=json&pageNo=1&numOfRows=30`
-  ]; }
+  // 한 지역 조회 — 우선순위: ① 중계(앱스스크립트) → ② 직접주소(고급) → ③ 기본 후보
+  const getRows=async(rg)=>{
+    let cands;
+    if(proxy){ cands=[ proxy + (proxy.indexOf("?")>=0?"&":"?") + "region=" + encodeURIComponent(rg) ]; }
+    else if(window.DISASTER_MSG_URL){ cands=[window.DISASTER_MSG_URL]; }
+    else { cands=[
+      `https://www.safetydata.go.kr/V2/api/DSSP-IF-00247?serviceKey=${key}&pageNo=1&numOfRows=30&returnType=json${rg?`&rgnNm=${encodeURIComponent(rg)}`:""}`,
+      `https://apis.data.go.kr/1741000/DisasterMsg3/getDisasterMsg1List?serviceKey=${key}&type=json&pageNo=1&numOfRows=30`
+    ]; }
+    let err="";
+    for(const url of cands){
+      try{
+        const res=await fetch(url,{cache:"no-store"});
+        if(!res.ok){ err=`HTTP ${res.status}`; continue; }
+        let data; try{ data=await res.json(); }catch(e){ err="응답 형식 오류(JSON 아님)"; continue; }
+        if(data&&data.error){ err="중계 오류: "+data.error; continue; }
+        return extractDmRows(data);
+      }catch(e){ err="접속 실패(CORS 차단 또는 네트워크)"; }
+    }
+    throw new Error(err||"알 수 없음");
+  };
   let lastErr="";
-  for(const url of cands){
-    try{
-      const res=await fetch(url,{cache:"no-store"});
-      if(!res.ok){ lastErr=`HTTP ${res.status}`; continue; }
-      let data; try{ data=await res.json(); }catch(e){ lastErr="응답 형식 오류(JSON 아님)"; continue; }
-      if(data&&data.error){ lastErr="중계 오류: "+data.error; continue; }
-      let rows=extractDmRows(data);
+  try{
+    let rows;
+    if(region==="동해"){
+      // 동해시: ① 수신지역에 '동해'가 있는 문자 + ② 강원도 전체 발송 문자 + ③ 강원 문자 중 본문에 '동해시'가 있는 것
+      const rs=await Promise.allSettled([getRows("동해"), getRows("강원")]);
+      const ok=rs.filter(r=>r.status==="fulfilled");
+      if(!ok.length) throw rs[0].reason;
+      const seen=new Set(); rows=[];
+      ok.forEach(r=>r.value.forEach(x=>{ const k=(x.when||"")+"|"+(x.msg||"").slice(0,60); if(seen.has(k)) return; seen.add(k); rows.push(x); }));
+      rows=rows.filter(r=>dmForDonghae(r));
+      rows.sort((a,b)=>String(b.when||"").localeCompare(String(a.when||"")));
+    } else {
+      rows=await getRows(region);
       if(region) rows=rows.filter(r=>(r.region||"").includes(region));
-      renderDm(rows.slice(0,20));
-      $("dmTime").textContent=nowHM()+" 기준"+(proxy?" · 중계":"");
-      return;
-    }catch(e){ lastErr="접속 실패(CORS 차단 또는 네트워크)"; }
-  }
+    }
+    renderDm(rows.slice(0,20));
+    $("dmTime").textContent=nowHM()+" 기준"+(proxy?" · 중계":"");
+    return;
+  }catch(e){ lastErr=(e&&e.message)||String(e||""); }
   box.innerHTML=`<div class="logempty">재난문자를 불러오지 못했습니다.<br><span style="color:#ff9a9c">사유: ${escapeHtml(lastErr||"알 수 없음")}</span><br><br>`+
     `<a href="https://www.safekorea.go.kr/idsiSFK/neo/sfk/cs/sfc/dis/disasterMsgList.jsp" target="_blank" style="color:var(--cyan);font-weight:700">국민재난안전포털에서 보기 ↗</a></div>`;
+}
+// 동해시 주민이 받는 문자인지 — 수신지역 '동해' / 강원도 전체 / 본문에 '동해시'
+function dmForDonghae(r){
+  const rg=String(r.region||""), msg=String(r.msg||"");
+  if(rg.includes("동해")) return true;
+  if(/강원(특별자치)?도\s*전체/.test(rg) || /^\s*강원(특별자치)?도\s*$/.test(rg) || /(^|,)\s*강원(특별자치)?도\s*(,|$)/.test(rg)) return true;
+  if(/동해시/.test(msg)) return true;
+  return false;
 }
 function extractDmRows(d){
   let arr=[];

@@ -163,8 +163,10 @@
   /* 지도 헤더: 발생위치·주소·버튼 한 줄 유지 (주소 길면 … 로 줄임) */
   .mappanel>h3{white-space:nowrap;container-type:inline-size}
   /* 지도 패널이 좁으면 버튼 글자를 숨기고 아이콘만(마우스 올리면 이름 표시) */
-  @container (max-width:640px){ .mappanel>h3 .bl2{display:none} }
-  @container (max-width:480px){ .mappanel>h3 .bl1{display:none} .mappanel>h3 .dbtn{padding:4px 7px!important;margin-left:3px!important} }
+  @container (max-width:820px){ .mappanel>h3 .bl2{display:none} }
+  @container (max-width:600px){ .mappanel>h3 .dbtn{padding:4px 6px!important;margin-left:3px!important} }
+  @container (max-width:500px){ .mappanel>h3 .bl1{display:none} }
+  @container (max-width:430px){ .mappanel>h3 .bl0{display:none} .mappanel>h3 .dbtn{padding:4px 5px!important;margin-left:2px!important} }
   .mappanel>h3 #dashMapAddr{flex:1;min-width:0;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wxttl{font-size:12px;font-weight:800;color:#8fd0ff;margin-right:2px}
   .wxchip{font-size:16px;font-weight:700;color:#fff;background:#0f2438;border:1px solid #1e3a52;border-radius:7px;padding:5px 11px;white-space:nowrap}
@@ -204,6 +206,39 @@
   #refBox .rfstg b{display:inline-block;min-width:68px;color:#ff9a9c}
   #refBox .rfnote{font-size:11px;color:var(--dim);margin-top:6px}
   @media(max-width:820px){ #refBox{left:6px;right:6px;bottom:6px;width:auto;max-height:70%;padding:6px 8px} }
+  /* 확산·다중 지점 (산불 등) */
+  #spotBox{position:absolute;right:10px;top:56px;z-index:7;display:none;width:262px;max-height:calc(100% - 70px);overflow:auto;
+    background:rgba(11,22,38,.96);border:1px solid #8a3b2e;border-radius:10px;padding:8px 10px}
+  #spotBox .sph{font-size:13px;font-weight:800;color:#ffb199;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  #spotBox .sph .shx{margin-left:auto;cursor:pointer;color:var(--dim);font-weight:700}
+  #spotBox .sph .shm{cursor:pointer;color:#9fc4ff;font-size:11px;font-weight:700;border:1px solid #2a567e;border-radius:5px;padding:1px 6px}
+  #spotBox.min{width:auto;padding:6px 10px} #spotBox.min .sph{margin-bottom:0}
+  #spotBox .sprow{display:flex;gap:7px;align-items:center;padding:6px 2px;border-top:1px solid #1e3550}
+  #spotBox .spn{flex-shrink:0;width:24px;height:24px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #fff}
+  #spotBox .spm{flex:1;min-width:0;font-size:13px;color:#fff;line-height:1.3}
+  #spotBox .spm b{cursor:pointer} #spotBox .spt{color:#8fd0ff;font-weight:800;margin-left:4px;cursor:pointer;font-size:12px}
+  #spotBox .sps{font-size:11px;color:#9fb0cc}
+  #spotBox select,#spotBox input{background:#0A1220;border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12px;padding:4px 5px;font-family:inherit;outline:none}
+  #spotBox .spx{background:none;border:none;color:#7b8da6;cursor:pointer;font-size:13px;padding:2px 4px}
+  #spotBox .spx:hover{color:#ff9a9c}
+  #spotBox .spadd{display:flex;gap:5px;margin-top:8px}
+  #spotBox .spadd input{flex:1;min-width:0;font-size:12.5px;padding:6px 7px}
+  #spotBox .spbtn{background:#15283f;border:1px solid #2a567e;color:#dce9ff;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+  #spotBox .spbtn.on{background:#5a2a1a;border-color:#ff7b54;color:#fff}
+  #spotBox .spopt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12px;color:#c9d6e8}
+  #spotBox .spwind{margin-top:6px;font-size:11.5px;color:#a8d8ff;line-height:1.5}
+  #spotBox .spempty{font-size:12px;color:var(--dim);padding:4px 2px;line-height:1.5}
+  .spmk{position:relative;width:28px;height:28px;cursor:pointer}
+  .spmk .c{position:absolute;inset:0;border-radius:50%;border:2.5px solid #fff;color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.55)}
+  .spmk.first .c{width:34px;height:34px;left:-3px;top:-3px;font-size:16px}
+  .spmk.first .l{top:34px}
+  .spmk.st-on .c{animation:spPulse 1.6s infinite}
+  @keyframes spPulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.65)}70%{box-shadow:0 0 0 12px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+  .spmk .l{position:absolute;left:50%;top:31px;transform:translateX(-50%);white-space:nowrap;background:rgba(10,18,32,.9);color:#fff;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.35)}
+  .spwl{background:rgba(20,60,110,.92);color:#dff1ff;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid #7cc4ff;white-space:nowrap}
+  @media(max-width:820px){ #spotBox{left:6px;right:6px;top:auto;bottom:6px;width:auto;max-height:45%} }
+  #spotToggleBtn{position:relative}
+  #spotToggleBtn[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:-6px;right:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#e5484d;color:#fff;font-size:10px;font-weight:800;line-height:15px;text-align:center}
   /* 보고서 탭 — 상황별 대응자료 카드 */
   #rptRef .rsec{font-size:12.5px;font-weight:800;color:#ffd38a;margin:10px 0 3px}
   #rptRef .rsec:first-child{margin-top:2px}
@@ -420,7 +455,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.19e</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.20a</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -655,9 +690,10 @@
 
     <!-- 큰 지도 (좌측) -->
     <div class="panel mappanel c-map">
-      <h3>🗺 발생위치 <span class="sub" id="dashMapAddr"></span>
+      <h3>🗺<span class="bl0"> 발생위치</span> <span class="sub" id="dashMapAddr"></span>
         <button class="dbtn ghost sm" id="shelterToggleBtn" style="flex-shrink:0;margin-left:auto" onclick="toggleShelters(this)" title="인근 대피소">🏠<span class="bl bl1"> 대피소</span></button>
         <button class="dbtn ghost sm" id="refToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleRef(this)" title="담당부서·비상연락망·비상단계·보유자원 (2026 안전관리계획)">📋<span class="bl bl1"> 대응자료</span></button>
+        <button class="dbtn ghost sm" id="spotToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleSpots(this)" title="확산·다중 지점 (산불 번짐, 동시다발 피해 등)">🔥<span class="bl bl1"> 확산</span></button>
         <button class="dbtn ghost sm" id="drawToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleDraw(this)" title="그리기">✏️<span class="bl bl2"> 그리기</span></button>
         <button class="dbtn ghost sm" style="flex-shrink:0;margin-left:5px" onclick="dashMapShow()" title="위치 표시">📍<span class="bl bl2"> 위치 표시</span></button>
         <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:5px;padding:4px 9px" onclick="togglePanelFull('c-map',this)">⛶</button></h3>
@@ -667,6 +703,7 @@
         <div id="dashWx"></div>
         <div id="shelterBox"></div>
         <div id="refBox"></div>
+        <div id="spotBox"></div>
         <div id="drawTools">
           <button class="dtool on" data-tool="pen" title="펜(자유그리기)">✏️</button>
           <button class="dtool" data-tool="line" title="직선">╱</button>
@@ -1982,6 +2019,7 @@ let sitPanelT=null;
 function sitPanelsRefresh(){ clearTimeout(sitPanelT); sitPanelT=setTimeout(()=>{
   if(typeof refOn!=="undefined" && refOn) renderRef();
   if(typeof checkOn!=="undefined" && checkOn) renderChecks();
+  if(typeof renderSpots==="function" && spotOn) renderSpots();
   if(typeof shelterOn!=="undefined" && shelterOn && window.__dashCoords) renderShelters(); }, 700); }
 function applyRemoteSit(s){
   if(!s) return; const af=document.activeElement;  // 입력 중인 칸은 덮어쓰지 않음
@@ -2032,11 +2070,12 @@ function dashMapCoords(lat,lng,label){
   dashMsg("");
   $("dashMapAddr").textContent=label||$("dsPlace").value||"";
   const pos=new kakao.maps.LatLng(lat,lng);
-  if(!dashMap){ dashMap=new kakao.maps.Map($("dashMapView"),{center:pos,level:4}); dashMarker=new kakao.maps.Marker({position:pos}); dashMarker.setMap(dashMap); }
+  if(!dashMap){ dashMap=new kakao.maps.Map($("dashMapView"),{center:pos,level:4}); dashMarker=new kakao.maps.Marker({position:pos}); dashMarker.setMap(dashMap); initSpotMapEvents(); }
   else { dashMarker.setPosition(pos); dashMarker.setMap(dashMap); }
   setTimeout(()=>{ if(dashMap){ dashMap.relayout(); dashMap.setCenter(pos); } }, 80);
   dashWeather(lat,lng);   // 지도 위 현재 기상 표시
   if(shelterOn) renderShelters();   // 발생위치 바뀌면 인근 대피소 갱신
+  renderSpots();
 }
 // 지도 위 현재 기상 오버레이 (기상청 초단기실황). silent=true면 '조회 중' 깜빡임 없이 조용히 갱신
 async function dashWeather(lat,lng,silent){
@@ -2052,6 +2091,8 @@ async function dashWeather(lat,lng,silent){
     const res=await fetch(url); const j=await res.json();
     const items=((j.response||{}).body||{}).items; if(!items||!items.item) throw 0;
     const v={}; items.item.forEach(it=>v[it.category]=it.obsrValue);
+    window.__wind=(v.VEC!==undefined && v.WSD!==undefined) ? {deg:+v.VEC, spd:+v.WSD, at:bt.slice(0,2)+"시"} : null;   // 확산 방향 표시용
+    if(typeof renderSpots==="function") renderSpots();
     const extra=await fetchVilage(g.nx,g.ny,key);
     const fl=feelsLike(v.T1H,v.REH,v.WSD);
     const chip=(ic,val)=>`<span class="wxchip">${ic} ${val}</span>`;
@@ -2187,7 +2228,7 @@ function shelterClose(){ const b=$("shelterToggleBtn"); if(shelterOn) toggleShel
 function toggleShelters(btn){
   shelterOn=!shelterOn;
   if(btn) btn.classList.toggle("on",shelterOn);
-  if(shelterOn){ if(isNarrow() && refOn) refClose(); renderShelters(); }
+  if(shelterOn){ if(isNarrow() && refOn) refClose(); if(isNarrow() && spotOn) spotClose(); renderShelters(); }
   else { clearShelterMarkers(); const b=$("shelterBox"); if(b){ b.style.display="none"; b.innerHTML=""; } }
 }
 function shBox(inner){ const b=$("shelterBox"); if(!b)return; b.style.display="block";
@@ -2241,7 +2282,7 @@ function telA(n){ const d=String(n).replace(/[^0-9]/g,""); const full=/^0/.test(
 function isNarrow(){ const m=$("dashMapView"); return (window.matchMedia && window.matchMedia("(max-width:820px)").matches) || (m && m.clientWidth && m.clientWidth<680); }
 function toggleRef(btn){
   refOn=!refOn; if(btn) btn.classList.toggle("on",refOn);
-  if(refOn){ if(isNarrow() && shelterOn) shelterClose(); renderRef(); }
+  if(refOn){ if(isNarrow() && shelterOn) shelterClose(); if(isNarrow() && spotOn) spotClose(); renderRef(); }
   else { const b=$("refBox"); if(b){ b.style.display="none"; b.innerHTML=""; } }
 }
 function refClose(){ if(refOn) toggleRef($("refToggleBtn")); }
@@ -2543,8 +2584,9 @@ function lRender(k){ const c=LCFG[k]; const box=$(c.list); if(!box)return;
 // ── 상황판 초기화 — 모든 기록 삭제 + '상황없음' ──
 function resetBoard(){
   if(!confirm("⚠ 상황판 초기화\n\n현재 상황판의 모든 기록이 삭제되고 '상황없음'으로 돌아갑니다.\n · 상황 요약(유형·장소·일시·단계)\n · 상황 일지 · 조치사항\n · 동원 인력 / 장비\n\n공유 중이면 모든 화면에서 함께 지워집니다.\n계속하시겠습니까?")) return;
-  if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); fbDB.ref("draw").remove(); }
+  if(fbReady){ fbDB.ref("logs").remove(); fbDB.ref("resources").remove(); fbDB.ref("equips").remove(); fbDB.ref("draw").remove(); fbDB.ref("spots").remove(); }
   else { LS.set("dh_log",[]); LS.set("dh_res",[]); LS.set("dh_equip",[]); renderLog(); lRender("res"); lRender("equip"); }
+  spots=[]; LS.set("dh_spots",[]); renderSpots();
   // 상황 요약 → 상황없음 (공유 전파)
   $("dsLevel").value="0"; $("dsType").value=""; $("dsPlace").value=""; $("dsTime").value="";
   saveSit();
@@ -2556,6 +2598,7 @@ function clearDashMap(){
   drawStrokes=[]; redrawMapDraw();   // 지도 그린 주석도 초기화
   if(dashMarker){ try{dashMarker.setMap(null);}catch(e){} }
   clearShelterMarkers(); if($("shelterBox")){ $("shelterBox").style.display="none"; $("shelterBox").innerHTML=""; }
+  clearSpotLayers();
   if($("dashMapAddr")) $("dashMapAddr").textContent="";
   if($("dashWx")){ $("dashWx").style.display="none"; $("dashWx").innerHTML=""; }
   dashMsg("발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다.");
@@ -2616,6 +2659,124 @@ function initMapDraw(){
   window.addEventListener("resize",()=>{ if($("pageDash").style.display!=="none") resizeDrawCanvas(); });
 }
 
+// ── 확산·다중 지점 (산불 번짐·동시다발 피해) — 지점 번호·상태·확산 경로·바람 방향·영향 반경, 모든 화면 공유 ──
+let spots=LS.get("dh_spots",[]), spotOn=false, spotMin=false, spotPick=false, spotLayers=[], spotEventsInit=false;
+const SP_COL={on:"#e5484d",warn:"#f59e0b",out:"#8a97a8"};
+function circNo(n){ return n>=1&&n<=20 ? String.fromCharCode(0x2460+n-1) : "("+n+")"; }
+function spotIsFire(){ return /산불|화재|불/.test(($("dsType")&&$("dsType").value)||""); }
+function spotWords(){ return spotIsFire()
+  ? {noun:"발화", st:{on:"진행 중",warn:"확산 우려",out:"진화 완료"}, title:"🔥 발화 지점"}
+  : {noun:"피해", st:{on:"발생",warn:"주의",out:"조치 완료"}, title:"📍 피해 지점"}; }
+function normSpots(v){ return dArr(v).map(o=>({id:String(o.id||""), n:+o.n||0, name:String(o.name||""), lat:+o.lat, lng:+o.lng, t:String(o.t||""), st:(["on","warn","out"].includes(o.st)?o.st:"on"), ts:+o.ts||0}))
+  .filter(o=>o.id && isFinite(o.lat) && isFinite(o.lng) && o.lat && o.lng).sort((a,b)=>a.n-b.n); }
+spots=normSpots(spots);
+function pushSpots(){ spots=normSpots(spots); LS.set("dh_spots",spots);
+  if(fbReady){ try{ fbDB.ref("spots").set(spots.length?spots:null); }catch(e){} }
+  renderSpots(); }
+function spotOpt(){ const o=LS.get("dh_spot_opt",{wind:true,r:1000}); return {wind:o.wind!==false, r:+o.r||0}; }
+function setSpotOpt(k,v){ const o=spotOpt(); o[k]=v; LS.set("dh_spot_opt",o); renderSpots(); }
+function logLine(x){ const entry={t:nowHM(), x, ts:Date.now()};
+  if(fbReady){ fbDB.ref("logs").push(entry); } else { const logs=getLogs(); logs.push({...entry,id:Date.now()}); setLogs(logs); } }
+function spotClose(){ if(spotOn) toggleSpots($("spotToggleBtn")); }
+function toggleSpots(btn){ spotOn=!spotOn; if(btn) btn.classList.toggle("on",spotOn);
+  if(spotOn && isNarrow()){ if(refOn) refClose(); if(shelterOn) shelterClose(); }
+  if(!spotOn){ spotPick=false; setMapCursor(); }
+  renderSpots(); }
+function setMapCursor(){ const v=$("dashMapView"); if(v) v.style.cursor=spotPick?"crosshair":""; }
+function bearingPoint(lat,lng,brg,m){ const R=6371000,r=Math.PI/180,d=m/R,t=brg*r,a=lat*r,b=lng*r;
+  const la=Math.asin(Math.sin(a)*Math.cos(d)+Math.cos(a)*Math.sin(d)*Math.cos(t));
+  const lo=b+Math.atan2(Math.sin(t)*Math.sin(d)*Math.cos(a),Math.cos(d)-Math.sin(a)*Math.sin(la));
+  return {lat:la/r, lng:lo/r}; }
+function windInfo(){ const w=window.__wind; if(!w||!isFinite(w.deg)||!isFinite(w.spd)) return null;
+  const to=(w.deg+180)%360; return {from:windDir(w.deg), to:windDir(to), toDeg:to, spd:w.spd, at:w.at}; }
+function clearSpotLayers(){ spotLayers.forEach(o=>{ try{o.setMap(null);}catch(e){} }); spotLayers=[]; }
+function renderSpots(){
+  // ① 지도 표시
+  clearSpotLayers();
+  const W=spotWords(), opt=spotOpt();
+  if(spots.length && !dashMap && window.__kakaoReady && window.kakao && kakao.maps && !window.__dashCoords){ dashMapCoords(spots[0].lat, spots[0].lng, spots[0].name); setTimeout(fitSpots,200); return; }
+  if(dashMap && window.kakao && kakao.maps){
+    const LL=(o)=>new kakao.maps.LatLng(o.lat,o.lng);
+    const add=o=>{ o.setMap(dashMap); spotLayers.push(o); };
+    try{
+      // 영향 반경
+      if(opt.r>0) spots.filter(o=>o.st!=="out").forEach(o=>add(new kakao.maps.Circle({center:LL(o),radius:opt.r,strokeWeight:2,strokeColor:SP_COL[o.st],strokeOpacity:.7,strokeStyle:"dash",fillColor:SP_COL[o.st],fillOpacity:.08})));
+      // 확산 경로 (① → ② → ③)
+      if(spots.length>1) add(new kakao.maps.Polyline({path:spots.map(LL),strokeWeight:4,strokeColor:"#ffb020",strokeOpacity:.95,strokeStyle:"shortdash",endArrow:true}));
+      // 바람 방향 (진행·우려 지점)
+      const wi=windInfo();
+      if(opt.wind && wi){
+        const act=spots.filter(o=>o.st!=="out");
+        const len=Math.min(2500, 400+wi.spd*200);
+        act.forEach(o=>{ const e=bearingPoint(o.lat,o.lng,wi.toDeg,len);
+          add(new kakao.maps.Polyline({path:[LL(o),new kakao.maps.LatLng(e.lat,e.lng)],strokeWeight:7,strokeColor:"#5ab8ff",strokeOpacity:.55,strokeStyle:"solid",endArrow:true})); });
+        if(act.length){ const o=act[act.length-1], e=bearingPoint(o.lat,o.lng,wi.toDeg,len);
+          add(new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(e.lat,e.lng),xAnchor:.5,yAnchor:1.5,zIndex:6,content:'<div class="spwl">🌬 '+escapeHtml(wi.from)+'풍 '+wi.spd+'m/s → '+escapeHtml(wi.to)+'쪽 확산 우려</div>'})); }
+      }
+      // 지점 마커
+      spots.forEach((o,i)=>{ const first=(i===0);
+        const lab=(first?"최초 ":"")+(o.t?o.t+" ":"")+o.name+(o.st==="out"?" ("+W.st.out+")":"");
+        const html='<div class="spmk st-'+o.st+(first?' first':'')+'" onclick="focusSpot(\''+o.id+'\')"><div class="c" style="background:'+SP_COL[o.st]+'">'+(first&&o.st!=="out"?"🔥":o.n)+'</div><div class="l">'+circNo(o.n)+' '+escapeHtml(lab)+'</div></div>';
+        add(new kakao.maps.CustomOverlay({position:LL(o),xAnchor:.5,yAnchor:.5,zIndex:first?9:8,content:html})); });
+    }catch(e){ console.warn("지점 표시 오류",e); }
+  }
+  // ② 목록 패널
+  const box=$("spotBox"); if(!box) return;
+  const btn=$("spotToggleBtn"); if(btn){ btn.classList.toggle("on",spotOn); btn.title=(spots.length?spots.length+"개 지점 · ":"")+"확산·다중 지점"; btn.dataset.n=spots.length?String(spots.length):""; }
+  if(!spotOn){ box.style.display="none"; box.innerHTML=""; return; }
+  const ro=VIEW_ONLY || loginNeeded();
+  box.classList.toggle("min",spotMin);
+  let h='<div class="sph">'+W.title+' <span style="color:#7b8da6;font-weight:600;font-size:11px">'+spots.length+'곳</span><span class="shx" style="margin-left:auto"></span><span class="shm" onclick="spotMin=!spotMin;renderSpots()" title="'+(spotMin?'목록 펼치기':'지도를 넓게 보기')+'">'+(spotMin?'펼치기 ▾':'접기 ▴')+'</span><span class="shx" style="margin-left:4px" onclick="spotClose()">✕</span></div>';
+  if(spotMin){ box.innerHTML=h; box.style.display="block"; return; }
+  if(!spots.length) h+='<div class="spempty">'+(ro?'표시된 지점이 없습니다.':'최초 '+W.noun+' 지점부터 추가하세요.<br>번진 곳은 ②, ③… 번호로 이어서 표시됩니다.')+'</div>';
+  spots.forEach((o,i)=>{
+    const stSel=ro?'<span class="sps">'+W.st[o.st]+'</span>':'<select onchange="spotSetSt(\''+o.id+'\',this.value)">'+["on","warn","out"].map(k=>'<option value="'+k+'"'+(o.st===k?' selected':'')+'>'+W.st[k]+'</option>').join("")+'</select>';
+    h+='<div class="sprow"><span class="spn" style="background:'+SP_COL[o.st]+'" onclick="focusSpot(\''+o.id+'\')" title="지도에서 보기">'+o.n+'</span>'+
+      '<div class="spm"><b '+(ro?'':'onclick="spotRename(\''+o.id+'\')" title="이름 수정"')+'>'+escapeHtml(o.name)+'</b><span class="spt" '+(ro?'':'onclick="spotRetime(\''+o.id+'\')" title="시각 수정"')+'>'+escapeHtml(o.t||"")+'</span>'+
+      '<div class="sps">'+(i===0?'최초 '+W.noun+' 지점':'추가 '+(W.noun==="발화"?'발화':'피해')+' 지점')+'</div></div>'+stSel+
+      (ro?'':'<button class="spx" onclick="spotDel(\''+o.id+'\')" title="삭제">✕</button>')+'</div>';
+  });
+  if(!ro){
+    h+='<div class="spadd"><input id="spQ" placeholder="산 이름·주소 (예: 두타산)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();spotAddByName();}"><button class="spbtn" onclick="spotAddByName()">추가</button></div>'+
+       '<div class="spopt"><button class="spbtn'+(spotPick?' on':'')+'" onclick="spotPickToggle()">'+(spotPick?'🖱 지도를 클릭하세요…':'🖱 지도 클릭으로 추가')+'</button>'+
+       (!spots.length && window.__dashCoords ? '<button class="spbtn" onclick="spotAddCurrent()">현재 발생위치를 ①로</button>':'')+'</div>';
+  }
+  const wi=windInfo();
+  h+='<div class="spopt"><label><input type="checkbox" '+(opt.wind?'checked':'')+' onchange="setSpotOpt(\'wind\',this.checked)"> 바람 방향</label>'+
+     '<select onchange="setSpotOpt(\'r\',+this.value)">'+[[0,"반경 없음"],[500,"반경 500m"],[1000,"반경 1㎞"],[2000,"반경 2㎞"]].map(([v,t])=>'<option value="'+v+'"'+(opt.r===v?' selected':'')+'>'+t+'</option>').join("")+'</select></div>';
+  h+='<div class="spwind">'+(wi?'🌬 '+escapeHtml(wi.from)+'풍 '+wi.spd+'m/s ('+escapeHtml(wi.at||"")+', 발생위치 기상) → <b>'+escapeHtml(wi.to)+'쪽</b> 확산 우려':'🌬 바람 정보 없음 — 발생위치를 지도에 표시하면 기상청 풍향으로 표시됩니다')+'</div>';
+  box.innerHTML=h; box.style.display="block";
+}
+function spotById(id){ return spots.find(o=>o.id===id); }
+function spotAdd(name,lat,lng){
+  const n=spots.reduce((m,o)=>Math.max(m,o.n),0)+1, W=spotWords();
+  const o={id:"s"+Date.now()+Math.floor(Math.random()*1000), n, name:name||("지점 "+n), lat, lng, t:nowHM(), st:"on", ts:Date.now()};
+  spots.push(o); pushSpots(); setTimeout(fitSpots,150);
+  logLine(n===1 ? circNo(n)+" "+o.name+" 최초 "+W.noun+" 지점 표시" : circNo(n)+" "+o.name+" 추가 "+(W.noun==="발화"?"발화 확인":"피해 확인"));
+}
+function fitSpots(){ if(!dashMap||!spots.length) return; try{
+  if(spots.length===1){ dashMap.setCenter(new kakao.maps.LatLng(spots[0].lat,spots[0].lng)); return; }
+  const b=new kakao.maps.LatLngBounds(); spots.forEach(o=>b.extend(new kakao.maps.LatLng(o.lat,o.lng))); const rp=(spotOn&&!spotMin&&!isNarrow())?300:60; dashMap.setBounds(b,70,rp,60,60); }catch(e){} }
+function spotAddByName(){ const q=(($("spQ")&&$("spQ").value)||"").trim(); if(!q) return;
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ alert("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); return; }
+  geocodeDonghae(q,(lat,lng)=>{ spotAdd(q,lat,lng); },()=>alert("‘"+q+"’ 위치를 찾지 못했습니다.\n'지도 클릭으로 추가'를 이용하세요.")); }
+function spotAddCurrent(){ const c=window.__dashCoords; if(!c) return;
+  const nm=(($("dsPlace").value||"").replace(/^(강원특별자치도|강원도)\s*/,"").replace(/^동해시\s*/,"").trim())||"발생위치"; spotAdd(nm,c.lat,c.lng); }
+function spotPickToggle(){ spotPick=!spotPick; setMapCursor(); renderSpots(); }
+function initSpotMapEvents(){ if(spotEventsInit||!dashMap) return; spotEventsInit=true;
+  kakao.maps.event.addListener(dashMap,"click",e=>{ if(!spotPick) return; spotPick=false; setMapCursor();
+    const ll=e.latLng, lat=ll.getLat(), lng=ll.getLng();
+    const ask=(def)=>{ const nm=prompt("이 지점의 이름 (예: 두타산 정상, ○○리 뒷산)",def||""); if(nm===null){ renderSpots(); return; } spotAdd(nm.trim()||def||"지점",lat,lng); };
+    try{ new kakao.maps.services.Geocoder().coord2Address(lng,lat,(res,st)=>{
+        let def=""; if(st===kakao.maps.services.Status.OK && res[0]){ def=((res[0].address&&res[0].address.address_name)||"").replace(/^강원(특별자치도)?\s*/,"").replace(/^동해시\s*/,""); }
+        ask(def); }); }catch(err){ ask(""); }
+  }); }
+function spotSetSt(id,st){ const o=spotById(id); if(!o||o.st===st) return; o.st=st; pushSpots(); logLine(circNo(o.n)+" "+o.name+" "+spotWords().st[st]); }
+function spotRename(id){ const o=spotById(id); if(!o) return; const v=prompt("지점 이름",o.name); if(v===null||!v.trim()) return; o.name=v.trim(); pushSpots(); }
+function spotRetime(id){ const o=spotById(id); if(!o) return; const v=prompt("발견 시각 (예: 15:05)",o.t); if(v===null) return; o.t=v.trim(); pushSpots(); }
+function spotDel(id){ const o=spotById(id); if(!o) return; if(!confirm(circNo(o.n)+" "+o.name+" 지점을 지울까요?")) return; spots=spots.filter(x=>x.id!==id); pushSpots(); }
+function focusSpot(id){ const o=spotById(id); if(!o||!dashMap) return; try{ dashMap.setCenter(new kakao.maps.LatLng(o.lat,o.lng)); if(dashMap.getLevel()>5) dashMap.setLevel(5); }catch(e){} }
+
 // ── 패널 전체화면 토글 (지도·상황일지·동원·재난문자·언론보도) ──
 function togglePanelFull(cls, btn){
   const panel=document.querySelector("."+cls); if(!panel) return;
@@ -2636,6 +2797,7 @@ function saveBoardData(){
     equip:lActive("equip").map(r=>({a:r.a||"", n:r.n||"", ts:r.ts||+r.id||0})),
     coords: window.__dashCoords||null,
     draw: drawStrokes,   // 지도에 그린 주석
+    spots: spots,        // 확산·다중 지점
   };
   const now=new Date(), p=n=>String(n).padStart(2,"0");
   const name=`재난상황판_${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.json`;
@@ -2670,6 +2832,7 @@ function loadBoardData(file){
     // 지도 그린 주석 복원 (+ 공유 전파)
     drawStrokes = dNormStrokes(d.draw);
     pushDraw();
+    spots = normSpots(d.spots); pushSpots();
     setTimeout(()=>{ resizeDrawCanvas(); }, 250);
     alert("✓ 불러오기 완료 — 상황판에 표시했습니다."+(d.savedAt?`\n(저장 시각: ${new Date(d.savedAt).toLocaleString("ko-KR")})`:""));
   };
@@ -2961,6 +3124,8 @@ async function initFirebase(){
     fbDB.ref("situation").on("value",snap=>{ applyRemoteSit(snap.val()); });
     // 지도 그린 주석 실시간 구독 (내가 그리는 중이면 덮어쓰지 않음)
     fbDB.ref("draw").on("value",snap=>{ if(drawingNow) return; drawStrokes=dNormStrokes(snap.val()); redrawMapDraw(); });
+    // 확산·다중 지점 실시간 구독
+    fbDB.ref("spots").on("value",snap=>{ const before=spots.length; spots=normSpots(snap.val()); LS.set("dh_spots",spots); renderSpots(); if(spots.length>before) setTimeout(fitSpots,200); });
     fbReady=true; setSyncBadge(true);
   }catch(e){ console.warn("Firebase 연결 실패:",e); fbReady=false; setSyncBadge(false); }
 }

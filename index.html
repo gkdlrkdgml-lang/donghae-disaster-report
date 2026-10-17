@@ -401,8 +401,14 @@
     /* 모바일: 지도 위 기상을 작게 — 한 줄에 들어오게 (제목·시각 숨김, 칩 축소) */
     #dashWx{top:6px;left:6px;right:6px;gap:4px;padding:4px 7px;flex-wrap:nowrap;overflow:hidden}
     #dashWx .wxtime{display:none}
+    #dashWx .wxt{display:none}
     #dashWx .wxttl{font-size:10.5px;margin-right:0}
     #dashWx .wxchip{font-size:12.5px;font-weight:700;color:#fff;padding:3px 7px;border-radius:6px}
+    /* 폰 브라우저 '다크 모드 자동 적용'(삼성인터넷·크롬)이 기상 글씨를 어둡게 바꾸는 문제 방지 */
+    :root{color-scheme:dark only}
+    #dashWx{background:#0a1422}
+    #dashWx .wxchip{background:#0f2438;color:#fff!important;-webkit-text-fill-color:#fff;text-shadow:0 1px 2px #000}
+    #dashWx .wxttl{color:#8fd0ff!important;-webkit-text-fill-color:#8fd0ff}
     /* 모바일: 상황일지 행 = 시각 윗줄 + 내용 아랫줄 전체폭 (좁은 칸 글자 깨짐 방지) */
     .side .logrow{flex-direction:column;align-items:stretch;gap:2px;padding:9px 2px}
     .side .logrow .lt{font-size:14px;font-weight:800;background:none;color:var(--ac);padding:0;align-self:flex-start}
@@ -455,7 +461,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.20a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.20c</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -2101,12 +2107,12 @@ async function dashWeather(lat,lng,silent){
     let h="";
     if(mobileWx){
       // 모바일: 온도·강수량·바람만 간단히
-      if(v.T1H!==undefined) h+=chip("🌡",v.T1H+"℃");
+      if(v.T1H!==undefined) h+=chip("기온",v.T1H+"℃");
       let rn=v.RN1; if(rn===undefined||rn===null||/강수\s*없음/.test(String(rn))||/^0(\.0)?$/.test(String(rn).trim())) rn="0mm"; else rn=String(rn).replace(/mm$/,"")+"mm";
       h+=chip("☔",rn);
       if(v.WSD!==undefined) h+=chip("🌬",v.WSD+"m/s"+(v.VEC!==undefined?" "+windDir(v.VEC):""));
     } else {
-      if(v.T1H!==undefined) h+=chip("🌡",v.T1H+"℃");
+      if(v.T1H!==undefined) h+=chip("기온",v.T1H+"℃");
       if(fl!==null) h+=chip("체감",fl+"℃");
       h+=chip("☁",PTY[v.PTY]||"-");
       if(extra&&extra.POP!==undefined) h+=chip("☂",extra.POP+"%");
@@ -2114,7 +2120,7 @@ async function dashWeather(lat,lng,silent){
       if(v.REH!==undefined) h+=chip("💧",v.REH+"%");
       if(extra&&extra.WAV!==undefined&&extra.WAV!==""&&extra.WAV!=="-99") h+=chip("🌊",extra.WAV+"m");
     }
-    ov.innerHTML=`<span class="wxttl">🌦 현재 기상</span>${h}<span class="wxtime">${bd.slice(4,6)}.${bd.slice(6,8)} ${bt.slice(0,2)}시</span>`;
+    ov.innerHTML=`<span class="wxttl">🌦<span class="wxt"> 현재 기상</span></span>${h}<span class="wxtime">${bd.slice(4,6)}.${bd.slice(6,8)} ${bt.slice(0,2)}시</span>`;
   }catch(e){ ov.style.display="none"; }
 }
 function dashMapShow(){

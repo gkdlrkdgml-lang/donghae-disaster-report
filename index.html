@@ -401,7 +401,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.18b</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.18c</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -892,12 +892,14 @@ function fillCBS(t){
   // ① 시설/장소 슬롯 (신고내역에서 확인된 경우에만 치환)
   if(cbsFacility){
     out=out
+      .replace(/○○시\s*○○\s*일대/g, "동해시 "+cbsFacility+" 일대")   // '○○시 ○○ 일대' → 동해시 + 시설
       .replace(/○○건물|○○업체|○○산|○○저수지|○○댐|○○강/g, cbsFacility)
       .replace(/○○\s*일대|○○\(으\)로/g, cbsFacility+" 일대")
       .replace(/\(○○\)/g, cbsFacility);
   }
   // ② 지역 슬롯은 항상 채움 (긴 패턴 먼저 — '○○시 ○○동'이 '○○시 ○○'보다 앞)
   out=out.replace(/○○시\s*○○구\s*○○동|○○\(시군구\),?\s*○○\(읍면동\)|○○시\s*○○동|○○시\s*○○|○○지역/g, region);
+  out=out.replace(/○○시/g,"동해시");   // 남은 시 자리표시자
   return out.replace(/\s{2,}/g," ").trim();
 }
 function byteLen(s){let b=0;for(const ch of s){b+=ch.charCodeAt(0)>127?2:1;}return b;}
@@ -1427,7 +1429,7 @@ async function generate(){
   cbsRegion=("동해시 "+locShort).trim()||"동해시";
   cbsTime=R.singoIlsi?hhmm(R.singoIlsi):"○○:○○";
   cbsFacility=R.facility||"";
-  selectCBSForType(dtype, (jangso||"")+" "+(R.prog||""));
+  selectCBSForType(window.__reportType||dtype, (jangso||"")+" "+(R.prog||""));   // 재난분류 세부유형(차량화재 등) 우선
   $("msgTabs").style.display="flex";
   prefillJihwi(dtype, ilsi, jangso, R.detail, R.prog);
 
@@ -2067,6 +2069,8 @@ function dashMapShow(){
 let shelterOn=false, shelterMarkers=[], shelterGeocoded=false, shRenderSeq=0;
 function SHL(){ return window.SHELTERS||[]; }
 // 상황유형 → 우선 대피소 유형. 없으면 전체(null)
+// 담당부서·체크리스트는 '상황유형' 기준으로 고르고, place:1 항목만 발생장소에서도 찾음 (예: 해수욕장 주차장 차량화재 → 물놀이 담당 제외)
+function dutyHit(d,type,place){ return (type && d.re.test(type)) || (d.place && place && d.re.test(place)); }
 function sitText(){ return (($("dsType")&&$("dsType").value)||"")+" "+(($("dsPlace")&&$("dsPlace").value)||""); }
 function shelterKinds(txt){
   const t=txt!=null?txt:sitText();
@@ -2231,7 +2235,8 @@ function renderRef(){
   const row=(k,v,tel)=>'<div class="rfrow"><span class="k">'+escapeHtml(k)+'</span><span class="v">'+v+'</span>'+(tel?telA(tel):'')+'</div>';
   if(refTab==="duty"){
     const hit=[]; const seen={};
-    (window.DUTY_CONTACTS||[]).forEach(d=>{ if(t.trim() && d.re.test(t)) d.list.forEach(x=>{ const k=x.join("|"); if(!seen[k]){ seen[k]=1; hit.push(x); } }); });
+    const ty=(($("dsType")&&$("dsType").value)||"").trim(), pl=(($("dsPlace")&&$("dsPlace").value)||"").trim();
+    (window.DUTY_CONTACTS||[]).forEach(d=>{ if(dutyHit(d,ty,pl)) d.list.forEach(x=>{ const k=x.join("|"); if(!seen[k]){ seen[k]=1; hit.push(x); } }); });
     const m=window.DUTY_MAIN;
     h+='<div class="rfsec">'+(t.trim()?'「'+escapeHtml(($("dsType")&&$("dsType").value)||t.trim())+'」 담당':'상황유형을 입력하면 담당부서가 표시됩니다')+'</div>';
     hit.forEach(([k,dept,name,tel])=>{ h+=row(k, escapeHtml(dept)+(name?' <span style="color:#9fb0cc">'+escapeHtml(name)+'</span>':''), tel); });
@@ -2264,7 +2269,8 @@ function rptRefRender(){
   const row=(k,v,tel)=>'<div class="rrow"><span class="k">'+escapeHtml(k)+'</span><span class="v">'+v+'</span>'+(tel?telA(tel):'')+'</div>';
   // ① 담당부서
   let duty='<div class="rsec">📞 담당부서'+(type?' — '+escapeHtml(type):'')+'</div>'; const seen={}; let n=0;
-  (window.DUTY_CONTACTS||[]).forEach(d=>{ if(d.re.test(t)) d.list.forEach(x=>{ const k=x[1]+x[3]; if(!seen[k]){ seen[k]=1; n++; duty+=row(x[0], escapeHtml(x[1]), x[3]); } }); });
+  const rpPlace=(($("f_jangso")&&$("f_jangso").value)||"");
+  (window.DUTY_CONTACTS||[]).forEach(d=>{ if(dutyHit(d,type,rpPlace)) d.list.forEach(x=>{ const k=x[1]+x[3]; if(!seen[k]){ seen[k]=1; n++; duty+=row(x[0], escapeHtml(x[1]), x[3]); } }); });
   const m=window.DUTY_MAIN; if(m) duty+=row(m[0], escapeHtml(m[1]), m[3]);
   if(!n) duty+='<div class="rnote">이 유형의 지정 담당부서가 없어 총괄(안전과)만 표시합니다.</div>';
   // ② 비상단계 기준 (해당 유형만)
@@ -2272,7 +2278,7 @@ function rptRefRender(){
     stg+='<div class="rsec">🚨 비상단계 기준 — '+escapeHtml(e.title)+'</div>'+e.stages.map(([a,b])=>'<div class="rstg"><b>'+escapeHtml(a)+'</b>'+escapeHtml(b)+'</div>').join(""); });
   // ④ 보고서 문안 제안 (실제 상황만 — 훈련은 훈련 문안을 쓰므로 제외)
   const isTrainNow=(typeof trainState!=="undefined" && trainState) || ($("training")&&$("training").checked);
-  const gl=rptGuideLines(t);
+  const gl=rptGuideLines(type);
   let guide="";
   if(gl.action.length||gl.outlook.length){
     guide='<div class="rsec">📝 보고서 문안 제안 <span style="color:var(--dim);font-weight:400;font-size:11px">2026 안전관리계획 기준</span></div>';
@@ -2318,7 +2324,7 @@ function rptGuideLines(t){ const a=[],o=[],sa={},so={};
   return {action:a.slice(0,4), outlook:o.slice(0,3)}; }
 function rptAddGuide(){
   if((typeof trainState!=="undefined" && trainState) || ($("training")&&$("training").checked)){ showMsg("훈련 상황에는 문안 제안을 적용하지 않습니다.","warn"); return; }
-  const gl=rptGuideLines(rptText());
+  const gl=rptGuideLines((window.__reportType||"").trim());
   const put=(id,lines)=>{ const el=$(id); if(!el||!lines.length) return 0;
     let v=el.value.trim(); if(/^확인\s*중$/.test(v)) v="";
     const add=lines.filter(x=>!v.includes(x)).map(x=>"- "+x);
@@ -2378,7 +2384,7 @@ function quickLog(i){ const t=(LOG_MACROS[i]||"").trim(); if(!t)return;
 }
 // ── 유형별 대응 체크리스트 (data/checklists.js) — 누르면 상황일지에 기록, 기록된 항목은 ✓ 표시(공유 일지 기준) ──
 let checkOn=false;
-function checkGroups(txt){ const t=txt!=null?txt:sitText(); return (window.RESPONSE_GUIDE||[]).filter(g=>t.trim() && g.re.test(t)); }
+function checkGroups(txt){ const t=txt!=null?txt:(($("dsType")&&$("dsType").value)||""); return (window.RESPONSE_GUIDE||[]).filter(g=>t.trim() && g.re.test(t)); }
 function toggleChecks(btn){ const box=$("logCheck"); if(!box) return;
   checkOn=!checkOn; box.style.display=checkOn?"block":"none"; if(btn) btn.classList.toggle("on",checkOn);
   if(checkOn) renderChecks(); }

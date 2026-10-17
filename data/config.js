@@ -57,3 +57,14 @@ window.FIREBASE_CONFIG = {
   appId: "1:53862264176:web:8544391a66a5ba60b073b5",
   measurementId: "G-P01VXZB655"
 };
+
+// ───────────────────────────────────────────────────────────────
+// PC 로그인 (상황판 입력·수정·삭제 보호) — 휴대폰(보기 전용)은 로그인 없이 보기만
+//  · true  : PC에서 열면 로그인 화면이 먼저 나옴 (한 번 로그인하면 그 PC는 계속 유지)
+//  · false : 로그인 없이 사용 (예전 방식)
+//  · 준비 : Firebase 콘솔 → Authentication → 이메일/비밀번호 사용 설정 → 사용자(공용 계정) 추가
+//  · 마지막에 Realtime Database 규칙을 { ".read": true, ".write": "auth != null" } 로 바꾸면
+//    로그인하지 않은 곳에서는 상황일지·동원현황을 고치거나 지울 수 없습니다.
+window.REQUIRE_LOGIN = true;
+//  · 공용 계정 이메일을 넣어두면 로그인 화면에 미리 채워져 비밀번호만 입력하면 됩니다. (비워도 됨)
+window.LOGIN_EMAIL = "";

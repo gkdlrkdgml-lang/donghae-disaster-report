@@ -693,7 +693,7 @@
       <h3>🗺<span class="bl0"> 발생위치</span> <span class="sub" id="dashMapAddr"></span>
         <button class="dbtn ghost sm" id="shelterToggleBtn" style="flex-shrink:0;margin-left:auto" onclick="toggleShelters(this)" title="인근 대피소">🏠<span class="bl bl1"> 대피소</span></button>
         <button class="dbtn ghost sm" id="refToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleRef(this)" title="담당부서·비상연락망·비상단계·보유자원 (2026 안전관리계획)">📋<span class="bl bl1"> 대응자료</span></button>
-        <button class="dbtn ghost sm" id="spotToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleSpots(this)" title="확산·다중 지점 (산불 번짐, 동시다발 피해 등)">🔥<span class="bl bl1"> 확산</span></button>
+        <button class="dbtn ghost sm" id="spotToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleSpots(this)" title="다중 피해 지점 (산불 확산·호우·강풍 등)">📍<span class="bl bl1"> 피해</span></button>
         <button class="dbtn ghost sm" id="drawToggleBtn" style="flex-shrink:0;margin-left:5px" onclick="toggleDraw(this)" title="그리기">✏️<span class="bl bl2"> 그리기</span></button>
         <button class="dbtn ghost sm" style="flex-shrink:0;margin-left:5px" onclick="dashMapShow()" title="위치 표시">📍<span class="bl bl2"> 위치 표시</span></button>
         <button class="dbtn ghost sm" title="전체화면" style="flex-shrink:0;margin-left:5px;padding:4px 9px" onclick="togglePanelFull('c-map',this)">⛶</button></h3>
@@ -2019,7 +2019,7 @@ let sitPanelT=null;
 function sitPanelsRefresh(){ clearTimeout(sitPanelT); sitPanelT=setTimeout(()=>{
   if(typeof refOn!=="undefined" && refOn) renderRef();
   if(typeof checkOn!=="undefined" && checkOn) renderChecks();
-  if(typeof renderSpots==="function" && spotOn) renderSpots();
+  if(typeof renderSpots==="function") renderSpots();
   if(typeof shelterOn!=="undefined" && shelterOn && window.__dashCoords) renderShelters(); }, 700); }
 function applyRemoteSit(s){
   if(!s) return; const af=document.activeElement;  // 입력 중인 칸은 덮어쓰지 않음
@@ -2092,6 +2092,7 @@ async function dashWeather(lat,lng,silent){
     const items=((j.response||{}).body||{}).items; if(!items||!items.item) throw 0;
     const v={}; items.item.forEach(it=>v[it.category]=it.obsrValue);
     window.__wind=(v.VEC!==undefined && v.WSD!==undefined) ? {deg:+v.VEC, spd:+v.WSD, at:bt.slice(0,2)+"시"} : null;   // 확산 방향 표시용
+    window.__rain=(v.RN1!==undefined) ? {rn1:v.RN1, pty:v.PTY, at:bt.slice(0,2)+"시"} : null;              // 호우 피해 지점 패널용
     if(typeof renderSpots==="function") renderSpots();
     const extra=await fetchVilage(g.nx,g.ny,key);
     const fl=feelsLike(v.T1H,v.REH,v.WSD);
@@ -2663,18 +2664,44 @@ function initMapDraw(){
 let spots=LS.get("dh_spots",[]), spotOn=false, spotMin=false, spotPick=false, spotLayers=[], spotEventsInit=false;
 const SP_COL={on:"#e5484d",warn:"#f59e0b",out:"#8a97a8"};
 function circNo(n){ return n>=1&&n<=20 ? String.fromCharCode(0x2460+n-1) : "("+n+")"; }
-function spotIsFire(){ return /산불|화재|불/.test(($("dsType")&&$("dsType").value)||""); }
-function spotWords(){ return spotIsFire()
-  ? {noun:"발화", st:{on:"진행 중",warn:"확산 우려",out:"진화 완료"}, title:"🔥 발화 지점"}
-  : {noun:"피해", st:{on:"발생",warn:"주의",out:"조치 완료"}, title:"📍 피해 지점"}; }
-function normSpots(v){ return dArr(v).map(o=>({id:String(o.id||""), n:+o.n||0, name:String(o.name||""), lat:+o.lat, lng:+o.lng, t:String(o.t||""), st:(["on","warn","out"].includes(o.st)?o.st:"on"), ts:+o.ts||0}))
+// 상황유형별 표시 방식 — 산불은 '확산', 호우·강풍·태풍·대설은 '동시다발 피해 지점'
+const RAIN_KINDS=["도로 침수","주택 침수","농경지 침수","하천 범람","토사 유출","산사태","지하차도 통제","도로 통제"];
+const WIND_KINDS=["수목 전도","간판 탈락","지붕·외벽 파손","시설물 파손","전신주·전선","공사장 가설물","선박·항만"];
+const SP_PROF=[
+  {key:"fire", re:/산불|화재|불/, ico:"🔥", btn:"확산", title:"🔥 발화 지점", noun:"발화", origin:true,
+   st:{on:"진행 중",warn:"확산 우려",out:"진화 완료"}, kinds:[], path:true, wind:true, r:1000, windTxt:" 확산 우려",
+   ph:"산 이름·주소 (예: 두타산)", empty:"최초 발화 지점부터 추가하세요.<br>번진 곳은 ②, ③… 번호로 이어서 표시됩니다."},
+  {key:"typhoon", re:/태풍/, ico:"🌀", btn:"피해", title:"🌀 태풍 피해 지점", noun:"피해",
+   st:{on:"피해 발생",warn:"위험 우려",out:"조치 완료"}, kinds:RAIN_KINDS.concat(WIND_KINDS), path:false, wind:true, r:0, rain:true, windTxt:"으로 부는 바람",
+   ph:"주소·장소 (예: 천곡동 지하차도)", empty:"피해 지점을 추가하세요.<br>①②③ 번호로 접수 순서대로 표시됩니다."},
+  {key:"rain", re:/호우|침수|폭우|홍수|범람|하천|산사태|토사|급경사/, ico:"💧", btn:"피해", title:"💧 호우 피해 지점", noun:"피해",
+   st:{on:"피해 발생",warn:"위험 우려",out:"복구 완료"}, kinds:RAIN_KINDS, path:false, wind:false, r:0, rain:true, windTxt:"으로 부는 바람",
+   ph:"주소·장소 (예: 천곡동 지하차도)", empty:"침수·토사 등 피해 지점을 추가하세요.<br>①②③ 번호로 접수 순서대로 표시됩니다."},
+  {key:"wind", re:/강풍|폭풍|돌풍|풍랑|해일|너울/, ico:"🌬", btn:"피해", title:"🌬 강풍 피해 지점", noun:"피해",
+   st:{on:"피해 발생",warn:"위험 우려",out:"조치 완료"}, kinds:WIND_KINDS, path:false, wind:true, r:0, windTxt:"으로 부는 바람",
+   ph:"주소·장소 (예: 천곡동 ○○빌딩)", empty:"수목 전도·간판 탈락 등 피해 지점을 추가하세요.<br>①②③ 번호로 접수 순서대로 표시됩니다."},
+  {key:"snow", re:/대설|폭설|제설|결빙/, ico:"❄", btn:"피해", title:"❄ 대설 피해 지점", noun:"피해",
+   st:{on:"피해 발생",warn:"위험 우려",out:"조치 완료"}, kinds:["도로 결빙·통제","차량 고립","마을 고립","비닐하우스 붕괴","축사 붕괴","주택 붕괴","정전"], path:false, wind:false, r:0,
+   ph:"주소·장소 (예: 삼화동 ○○마을)", empty:"고립·붕괴 등 피해 지점을 추가하세요.<br>①②③ 번호로 접수 순서대로 표시됩니다."},
+  {key:"etc", re:/./, ico:"📍", btn:"피해", title:"📍 피해 지점", noun:"피해",
+   st:{on:"발생",warn:"주의",out:"조치 완료"}, kinds:[], path:true, wind:false, r:0, windTxt:"으로 부는 바람",
+   ph:"주소·장소", empty:"피해 지점을 추가하세요.<br>①②③ 번호로 순서대로 표시됩니다."},
+];
+function spotProf(){ const t=(($("dsType")&&$("dsType").value)||"").trim(); return SP_PROF.find(p=>p.key!=="etc" && p.re.test(t)) || SP_PROF[SP_PROF.length-1]; }
+function spotWords(){ return spotProf(); }
+function normSpots(v){ return dArr(v).map(o=>({id:String(o.id||""), n:+o.n||0, name:String(o.name||""), lat:+o.lat, lng:+o.lng, t:String(o.t||""), k:String(o.k||""), st:(["on","warn","out"].includes(o.st)?o.st:"on"), ts:+o.ts||0}))
   .filter(o=>o.id && isFinite(o.lat) && isFinite(o.lng) && o.lat && o.lng).sort((a,b)=>a.n-b.n); }
 spots=normSpots(spots);
 function pushSpots(){ spots=normSpots(spots); LS.set("dh_spots",spots);
   if(fbReady){ try{ fbDB.ref("spots").set(spots.length?spots:null); }catch(e){} }
   renderSpots(); }
-function spotOpt(){ const o=LS.get("dh_spot_opt",{wind:true,r:1000}); return {wind:o.wind!==false, r:+o.r||0}; }
-function setSpotOpt(k,v){ const o=spotOpt(); o[k]=v; LS.set("dh_spot_opt",o); renderSpots(); }
+// 표시 옵션 — 유형별로 따로 기억 (산불은 바람·반경 켬, 호우는 끔 …)
+function spotOpt(){ const P=spotProf(), o=LS.get("dh_spot_opt_"+P.key,{})||{};
+  return {wind:(o.wind===undefined?P.wind:!!o.wind), path:(o.path===undefined?P.path:!!o.path), r:(o.r===undefined?P.r:+o.r||0)}; }
+function setSpotOpt(k,v){ const P=spotProf(), o=LS.get("dh_spot_opt_"+P.key,{})||{}; o[k]=v; LS.set("dh_spot_opt_"+P.key,o); renderSpots(); }
+function rainInfo(){ const r=window.__rain; if(!r) return null; let v=String(r.rn1==null?"":r.rn1).trim();
+  if(!v||/없음/.test(v)||/^0(\.0)?(mm)?$/.test(v)) v="0"; v=v.replace(/mm$/,""); return {rn1:v, pty:r.pty, at:r.at}; }
+function spotLab(o,P){ return o.name+(o.k?" · "+o.k:""); }
 function logLine(x){ const entry={t:nowHM(), x, ts:Date.now()};
   if(fbReady){ fbDB.ref("logs").push(entry); } else { const logs=getLogs(); logs.push({...entry,id:Date.now()}); setLogs(logs); } }
 function spotClose(){ if(spotOn) toggleSpots($("spotToggleBtn")); }
@@ -2702,7 +2729,7 @@ function renderSpots(){
       // 영향 반경
       if(opt.r>0) spots.filter(o=>o.st!=="out").forEach(o=>add(new kakao.maps.Circle({center:LL(o),radius:opt.r,strokeWeight:2,strokeColor:SP_COL[o.st],strokeOpacity:.7,strokeStyle:"dash",fillColor:SP_COL[o.st],fillOpacity:.08})));
       // 확산 경로 (① → ② → ③)
-      if(spots.length>1) add(new kakao.maps.Polyline({path:spots.map(LL),strokeWeight:4,strokeColor:"#ffb020",strokeOpacity:.95,strokeStyle:"shortdash",endArrow:true}));
+      if(opt.path && spots.length>1) add(new kakao.maps.Polyline({path:spots.map(LL),strokeWeight:4,strokeColor:"#ffb020",strokeOpacity:.95,strokeStyle:"shortdash",endArrow:true}));
       // 바람 방향 (진행·우려 지점)
       const wi=windInfo();
       if(opt.wind && wi){
@@ -2711,49 +2738,64 @@ function renderSpots(){
         act.forEach(o=>{ const e=bearingPoint(o.lat,o.lng,wi.toDeg,len);
           add(new kakao.maps.Polyline({path:[LL(o),new kakao.maps.LatLng(e.lat,e.lng)],strokeWeight:7,strokeColor:"#5ab8ff",strokeOpacity:.55,strokeStyle:"solid",endArrow:true})); });
         if(act.length){ const o=act[act.length-1], e=bearingPoint(o.lat,o.lng,wi.toDeg,len);
-          add(new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(e.lat,e.lng),xAnchor:.5,yAnchor:1.5,zIndex:6,content:'<div class="spwl">🌬 '+escapeHtml(wi.from)+'풍 '+wi.spd+'m/s → '+escapeHtml(wi.to)+'쪽 확산 우려</div>'})); }
+          add(new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(e.lat,e.lng),xAnchor:.5,yAnchor:1.5,zIndex:6,content:'<div class="spwl">🌬 '+escapeHtml(wi.from)+'풍 '+wi.spd+'m/s → '+escapeHtml(wi.to)+'쪽'+escapeHtml(W.windTxt||"")+'</div>'})); }
       }
       // 지점 마커
-      spots.forEach((o,i)=>{ const first=(i===0);
-        const lab=(first?"최초 ":"")+(o.t?o.t+" ":"")+o.name+(o.st==="out"?" ("+W.st.out+")":"");
-        const html='<div class="spmk st-'+o.st+(first?' first':'')+'" onclick="focusSpot(\''+o.id+'\')"><div class="c" style="background:'+SP_COL[o.st]+'">'+(first&&o.st!=="out"?"🔥":o.n)+'</div><div class="l">'+circNo(o.n)+' '+escapeHtml(lab)+'</div></div>';
+      spots.forEach((o,i)=>{ const first=(i===0 && W.origin);
+        const lab=(first?"최초 ":"")+(o.t?o.t+" ":"")+spotLab(o,W)+(o.st==="out"?" ("+W.st.out+")":"");
+        const html='<div class="spmk st-'+o.st+(first?' first':'')+'" onclick="focusSpot(\''+o.id+'\')"><div class="c" style="background:'+SP_COL[o.st]+'">'+(first&&o.st!=="out"?W.ico:o.n)+'</div><div class="l">'+circNo(o.n)+' '+escapeHtml(lab)+'</div></div>';
         add(new kakao.maps.CustomOverlay({position:LL(o),xAnchor:.5,yAnchor:.5,zIndex:first?9:8,content:html})); });
     }catch(e){ console.warn("지점 표시 오류",e); }
   }
   // ② 목록 패널
   const box=$("spotBox"); if(!box) return;
-  const btn=$("spotToggleBtn"); if(btn){ btn.classList.toggle("on",spotOn); btn.title=(spots.length?spots.length+"개 지점 · ":"")+"확산·다중 지점"; btn.dataset.n=spots.length?String(spots.length):""; }
+  const btn=$("spotToggleBtn"); if(btn){ btn.classList.toggle("on",spotOn); btn.title=(spots.length?spots.length+"개 지점 · ":"")+"다중 피해 지점 (산불 확산·호우·강풍 등)"; btn.dataset.n=spots.length?String(spots.length):"";
+    const want=W.ico+'<span class="bl bl1"> '+W.btn+'</span>'; if(btn.__lab!==want){ btn.innerHTML=want; btn.__lab=want; } }
   if(!spotOn){ box.style.display="none"; box.innerHTML=""; return; }
   const ro=VIEW_ONLY || loginNeeded();
   box.classList.toggle("min",spotMin);
   let h='<div class="sph">'+W.title+' <span style="color:#7b8da6;font-weight:600;font-size:11px">'+spots.length+'곳</span><span class="shx" style="margin-left:auto"></span><span class="shm" onclick="spotMin=!spotMin;renderSpots()" title="'+(spotMin?'목록 펼치기':'지도를 넓게 보기')+'">'+(spotMin?'펼치기 ▾':'접기 ▴')+'</span><span class="shx" style="margin-left:4px" onclick="spotClose()">✕</span></div>';
   if(spotMin){ box.innerHTML=h; box.style.display="block"; return; }
-  if(!spots.length) h+='<div class="spempty">'+(ro?'표시된 지점이 없습니다.':'최초 '+W.noun+' 지점부터 추가하세요.<br>번진 곳은 ②, ③… 번호로 이어서 표시됩니다.')+'</div>';
+  if(!spots.length) h+='<div class="spempty">'+(ro?'표시된 지점이 없습니다.':W.empty)+'</div>';
   spots.forEach((o,i)=>{
     const stSel=ro?'<span class="sps">'+W.st[o.st]+'</span>':'<select onchange="spotSetSt(\''+o.id+'\',this.value)">'+["on","warn","out"].map(k=>'<option value="'+k+'"'+(o.st===k?' selected':'')+'>'+W.st[k]+'</option>').join("")+'</select>';
     h+='<div class="sprow"><span class="spn" style="background:'+SP_COL[o.st]+'" onclick="focusSpot(\''+o.id+'\')" title="지도에서 보기">'+o.n+'</span>'+
       '<div class="spm"><b '+(ro?'':'onclick="spotRename(\''+o.id+'\')" title="이름 수정"')+'>'+escapeHtml(o.name)+'</b><span class="spt" '+(ro?'':'onclick="spotRetime(\''+o.id+'\')" title="시각 수정"')+'>'+escapeHtml(o.t||"")+'</span>'+
-      '<div class="sps">'+(i===0?'최초 '+W.noun+' 지점':'추가 '+(W.noun==="발화"?'발화':'피해')+' 지점')+'</div></div>'+stSel+
+      '<div class="sps">'+spotSub(o,i,W,ro)+'</div></div>'+stSel+
       (ro?'':'<button class="spx" onclick="spotDel(\''+o.id+'\')" title="삭제">✕</button>')+'</div>';
   });
   if(!ro){
-    h+='<div class="spadd"><input id="spQ" placeholder="산 이름·주소 (예: 두타산)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();spotAddByName();}"><button class="spbtn" onclick="spotAddByName()">추가</button></div>'+
+    if(W.kinds.length) h+='<div class="spadd"><select id="spK" style="flex:1" title="새로 추가할 지점의 피해 유형" onchange="spotKind=this.value"><option value="">피해 유형 선택(선택)</option>'+W.kinds.map(k=>'<option'+(spotKind===k?' selected':'')+'>'+k+'</option>').join("")+'<option value="기타"'+(spotKind==="기타"?' selected':'')+'>기타</option></select></div>';
+    h+='<div class="spadd"><input id="spQ" placeholder="'+escapeHtml(W.ph)+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();spotAddByName();}"><button class="spbtn" onclick="spotAddByName()">추가</button></div>'+
        '<div class="spopt"><button class="spbtn'+(spotPick?' on':'')+'" onclick="spotPickToggle()">'+(spotPick?'🖱 지도를 클릭하세요…':'🖱 지도 클릭으로 추가')+'</button>'+
        (!spots.length && window.__dashCoords ? '<button class="spbtn" onclick="spotAddCurrent()">현재 발생위치를 ①로</button>':'')+'</div>';
   }
   const wi=windInfo();
-  h+='<div class="spopt"><label><input type="checkbox" '+(opt.wind?'checked':'')+' onchange="setSpotOpt(\'wind\',this.checked)"> 바람 방향</label>'+
+  h+='<div class="spopt"><label title="①→②→③ 순서를 화살표로 잇기"><input type="checkbox" '+(opt.path?'checked':'')+' onchange="setSpotOpt(\'path\',this.checked)"> '+(W.origin?'확산 경로':'순서 화살표')+'</label>'+
+     '<label><input type="checkbox" '+(opt.wind?'checked':'')+' onchange="setSpotOpt(\'wind\',this.checked)"> 바람 방향</label>'+
      '<select onchange="setSpotOpt(\'r\',+this.value)">'+[[0,"반경 없음"],[500,"반경 500m"],[1000,"반경 1㎞"],[2000,"반경 2㎞"]].map(([v,t])=>'<option value="'+v+'"'+(opt.r===v?' selected':'')+'>'+t+'</option>').join("")+'</select></div>';
-  h+='<div class="spwind">'+(wi?'🌬 '+escapeHtml(wi.from)+'풍 '+wi.spd+'m/s ('+escapeHtml(wi.at||"")+', 발생위치 기상) → <b>'+escapeHtml(wi.to)+'쪽</b> 확산 우려':'🌬 바람 정보 없음 — 발생위치를 지도에 표시하면 기상청 풍향으로 표시됩니다')+'</div>';
+  const ri=W.rain?rainInfo():null;
+  if(W.rain) h+='<div class="spwind">'+(ri?'🌧 1시간 강수 <b>'+escapeHtml(ri.rn1)+'mm</b> ('+escapeHtml(ri.at||"")+', 발생위치 기상) · '+escapeHtml(PTY[ri.pty]||""):'🌧 강수 정보 없음 — 발생위치를 지도에 표시하면 기상청 실황으로 표시됩니다')+'</div>';
+  if(W.wind || opt.wind) h+='<div class="spwind">'+(wi?'🌬 '+escapeHtml(wi.from)+'풍 '+wi.spd+'m/s ('+escapeHtml(wi.at||"")+', 발생위치 기상) → <b>'+escapeHtml(wi.to)+'쪽</b>'+escapeHtml(W.windTxt||""):'🌬 바람 정보 없음 — 발생위치를 지도에 표시하면 기상청 풍향으로 표시됩니다')+'</div>';
   box.innerHTML=h; box.style.display="block";
 }
 function spotById(id){ return spots.find(o=>o.id===id); }
+let spotKind="";
+function spotSub(o,i,W,ro){
+  if(W.origin) return i===0?'최초 발화 지점':'추가 발화 지점';
+  if(!W.kinds.length) return '피해 지점';
+  if(ro) return escapeHtml(o.k||'피해 지점');
+  const ks=W.kinds.concat(["기타"]); if(o.k && ks.indexOf(o.k)<0) ks.push(o.k);
+  return '<select style="font-size:11px;padding:1px 3px;margin-top:2px;max-width:130px" onchange="spotSetKind(\''+o.id+'\',this.value)"><option value="">피해 유형 ▾</option>'+ks.map(k=>'<option'+(o.k===k?' selected':'')+'>'+k+'</option>').join("")+'</select>'; }
 function spotAdd(name,lat,lng){
   const n=spots.reduce((m,o)=>Math.max(m,o.n),0)+1, W=spotWords();
-  const o={id:"s"+Date.now()+Math.floor(Math.random()*1000), n, name:name||("지점 "+n), lat, lng, t:nowHM(), st:"on", ts:Date.now()};
+  const k=W.kinds.length?spotKind:"";
+  const o={id:"s"+Date.now()+Math.floor(Math.random()*1000), n, name:name||("지점 "+n), lat, lng, t:nowHM(), k, st:"on", ts:Date.now()};
   spots.push(o); pushSpots(); setTimeout(fitSpots,150);
-  logLine(n===1 ? circNo(n)+" "+o.name+" 최초 "+W.noun+" 지점 표시" : circNo(n)+" "+o.name+" 추가 "+(W.noun==="발화"?"발화 확인":"피해 확인"));
+  if(W.origin) logLine(n===1 ? circNo(n)+" "+o.name+" 최초 발화 지점 표시" : circNo(n)+" "+o.name+" 추가 발화 확인");
+  else logLine(circNo(n)+" "+o.name+(k?" "+k+(/통제$/.test(k)?"":" 발생"):" 피해 지점 표시"));
 }
+function spotSetKind(id,k){ const o=spotById(id); if(!o||o.k===k) return; o.k=k; pushSpots(); if(k) logLine(circNo(o.n)+" "+o.name+" 피해 유형: "+k); }
 function fitSpots(){ if(!dashMap||!spots.length) return; try{
   if(spots.length===1){ dashMap.setCenter(new kakao.maps.LatLng(spots[0].lat,spots[0].lng)); return; }
   const b=new kakao.maps.LatLngBounds(); spots.forEach(o=>b.extend(new kakao.maps.LatLng(o.lat,o.lng))); const rp=(spotOn&&!spotMin&&!isNarrow())?300:60; dashMap.setBounds(b,70,rp,60,60); }catch(e){} }
@@ -2766,7 +2808,7 @@ function spotPickToggle(){ spotPick=!spotPick; setMapCursor(); renderSpots(); }
 function initSpotMapEvents(){ if(spotEventsInit||!dashMap) return; spotEventsInit=true;
   kakao.maps.event.addListener(dashMap,"click",e=>{ if(!spotPick) return; spotPick=false; setMapCursor();
     const ll=e.latLng, lat=ll.getLat(), lng=ll.getLng();
-    const ask=(def)=>{ const nm=prompt("이 지점의 이름 (예: 두타산 정상, ○○리 뒷산)",def||""); if(nm===null){ renderSpots(); return; } spotAdd(nm.trim()||def||"지점",lat,lng); };
+    const ask=(def)=>{ const nm=prompt(spotProf().origin?"이 지점의 이름 (예: 두타산 정상, ○○리 뒷산)":"이 지점의 이름 (예: 천곡동 지하차도, ○○아파트 앞)",def||""); if(nm===null){ renderSpots(); return; } spotAdd(nm.trim()||def||"지점",lat,lng); };
     try{ new kakao.maps.services.Geocoder().coord2Address(lng,lat,(res,st)=>{
         let def=""; if(st===kakao.maps.services.Status.OK && res[0]){ def=((res[0].address&&res[0].address.address_name)||"").replace(/^강원(특별자치도)?\s*/,"").replace(/^동해시\s*/,""); }
         ask(def); }); }catch(err){ ask(""); }
@@ -3188,6 +3230,7 @@ function setSyncBadge(on){
 (function initDash(){
   loadSit();
   ["dsType","dsPlace","dsTime"].forEach(id=>$(id).addEventListener("input",saveSit));
+  setTimeout(()=>{ try{ renderSpots(); }catch(e){} },0);   // 확산·피해 지점 버튼 아이콘을 상황유형에 맞춤
   $("dsLevel").addEventListener("change",saveSit);
   $("logInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addLog(); } });
   $("logTime").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("logInput").focus(); } });

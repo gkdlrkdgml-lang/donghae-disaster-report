@@ -204,6 +204,21 @@
   #refBox .rfstg b{display:inline-block;min-width:68px;color:#ff9a9c}
   #refBox .rfnote{font-size:11px;color:var(--dim);margin-top:6px}
   @media(max-width:820px){ #refBox{left:6px;right:6px;bottom:6px;width:auto;max-height:70%;padding:6px 8px} }
+  /* 보고서 탭 — 상황별 대응자료 카드 */
+  #rptRef .rsec{font-size:12.5px;font-weight:800;color:#ffd38a;margin:10px 0 3px}
+  #rptRef .rsec:first-child{margin-top:2px}
+  #rptRef .rrow{display:flex;gap:8px;align-items:baseline;padding:5px 2px;border-top:1px solid #1e3550;font-size:13px;color:#dfe7f3}
+  #rptRef .rrow .k{color:#9fb0cc;font-size:12px;min-width:86px;flex-shrink:0}
+  #rptRef .rrow .v{flex:1;min-width:0}
+  #rptRef .rrow a{color:#8fd0ff;font-weight:800;text-decoration:none;white-space:nowrap}
+  #rptRef .rrow .d{color:#8fd0ff;font-weight:800;white-space:nowrap}
+  #rptRef .rrow.clk{cursor:pointer;border-radius:5px} #rptRef .rrow.clk:hover{background:#14263c}
+  #rptRef .rtag{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:999px;background:#153a26;color:#7fe0a0;border:1px solid #2a6b44;white-space:nowrap;margin-left:5px}
+  #rptRef .rtag.cm{background:#3a2c12;color:#ffcf7a;border-color:#7a5a24}
+  #rptRef .rnote{font-size:11.5px;color:var(--dim);margin-top:4px;line-height:1.5}
+  #rptRef .rstg{padding:5px 2px;border-top:1px solid #1e3550;font-size:12.5px;color:#dfe7f3;line-height:1.5}
+  #rptRef .rstg b{display:inline-block;min-width:76px;color:#ff9a9c}
+  #rptRef .rbtn{margin-top:8px;background:#123;border:1px solid var(--cyan);color:var(--cyan);border-radius:6px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
   /* 우측 패널 묶음 */
   .side{grid-row:2;grid-column:2;display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:1.35fr 0.8fr 0.85fr;gap:12px;min-height:0}
   .side .panel{min-height:0}
@@ -374,7 +389,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.17d</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.18a</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -431,6 +446,12 @@
           <div id="wxMain" style="display:flex;flex-wrap:wrap;gap:10px"></div>
           <div id="wxMsg" style="font-size:12px;color:var(--dim);margin-top:6px"></div>
         </div>
+      </div>
+
+      <!-- 상황별 대응자료 (담당부서·인근 대피소·비상단계) — 보고서 생성 시 자동 표시 -->
+      <div class="card" id="rptRefCard" style="display:none">
+        <div class="lab" style="display:flex;align-items:center;gap:8px">📋 상황별 대응자료 <span style="color:var(--dim);font-weight:400;font-size:11px">2026 안전관리계획 · 인근 대피소</span></div>
+        <div id="rptRef"></div>
       </div>
     </div>
 
@@ -1338,7 +1359,7 @@ async function generate(){
     const R=parseTraining(raw);
     const trTime=R.ilsi?hhmm(R.ilsi):"○○:○○";
     trainState={ilsi:R.ilsi,time:trTime,jangsoTmpl:R.jangsoTmpl,gaeyoTmpl:R.gaeyoTmpl,actionTmpl:R.actionTmpl,type:R.type,venue:R.venue};
-    window.__reportType=R.type||"";
+    window.__reportType=R.type||""; scheduleRptRef();
     setTraining(true);
     $("f_reportNo").value=""; $("reportNo").value="";
     $("f_ilsi").value=R.ilsi?fmtDateTime(R.ilsi):"";
@@ -1373,6 +1394,7 @@ async function generate(){
   const locShort=R.balsaeng?R.balsaeng.replace(/^강원(특별자치)?도\s*/,"").replace(/동해시\s*/,""):"";
   const title=makeTitle(R.bo, R.training, jangso, dtype);
   window.__reportType=pickDisplayType(raw, dtype);   // 상황판 '상황유형'용 — 세부유형(건물화재 등) 반영
+  window.__reportCoords=null; scheduleRptRef();   // 새 메시지 → 이전 좌표 무효(새 좌표가 잡히면 대피소 갱신)
 
   setTraining(R.training);
   $("f_reportNo").value=R.bo||""; $("reportNo").value=R.bo||"";
@@ -1655,6 +1677,7 @@ function applySearchedPlace(p, display){
 let kakaoMap=null, kakaoMarker=null;
 function showMapByCoords(lat,lng,label){
   window.__reportCoords={lat,lng,label:label||""};  // 대시보드 지도에서 재사용
+  scheduleRptRef();
   if(!window.__kakaoReady||!window.kakao||!kakao.maps){ return; }
   $("mapCard").style.display="block";
   $("mapView").style.display="block";
@@ -1841,6 +1864,7 @@ $("trainTypeSel").addEventListener("change",function(){
   if(!trainState)return;
   trainState.type=this.value;
   window.__reportType=this.value;          // 상황판 '상황유형'도 갱신
+  scheduleRptRef();
   applyTrainLoc(trainState.curLoc||pickTrainLoc());   // 같은 장소로 재난문자·지휘부·제목 다시 작성
   showMsg("주 상황유형을 '"+this.value+"'로 바꿔 재난문자·지휘부 상황보고를 다시 작성했습니다.","warn");
 });
@@ -2028,8 +2052,9 @@ function dashMapShow(){
 let shelterOn=false, shelterMarkers=[], shelterGeocoded=false, shRenderSeq=0;
 function SHL(){ return window.SHELTERS||[]; }
 // 상황유형 → 우선 대피소 유형. 없으면 전체(null)
-function shelterKinds(){
-  const t=(($("dsType")&&$("dsType").value)||"")+" "+(($("dsPlace")&&$("dsPlace").value)||"");
+function sitText(){ return (($("dsType")&&$("dsType").value)||"")+" "+(($("dsPlace")&&$("dsPlace").value)||""); }
+function shelterKinds(txt){
+  const t=txt!=null?txt:sitText();
   if(/지진\s*해일|해일|쓰나미/.test(t)) return ["지진해일","지진옥외","공통"];
   if(/지진/.test(t))                     return ["지진옥외","지진해일","공통"];
   if(/민방위|전시|공습|포격|미사일|경계경보|화생방/.test(t)) return ["민방위","공통"];
@@ -2074,8 +2099,8 @@ function geocodeShelters(done){
 // 발생위치 주변 임시 대피 후보 — 상황유형에 맞춰 카카오 장소검색(실시간). 지정 대피소가 아니므로 '참고'로 별도 표시
 // (2026 안전관리계획: 이재민 수용시설=학교 강당·체육관 등, 무더위쉼터=경로당 등, 지진 시 옥외 공터 대피)
 const CM_RADIUS=3000, CM_MAX=6;
-function communityPlan(){
-  const t=(($("dsType")&&$("dsType").value)||"")+" "+(($("dsPlace")&&$("dsPlace").value)||"");
+function communityPlan(txt){
+  const t=txt!=null?txt:sitText();
   if(/지진\s*해일|해일|쓰나미/.test(t)) return {title:"주변 마을회관·경로당", kws:["경로당","마을회관"],
     note:'<span style="color:#ffcf7a">※ 지진해일: 해안 저지대 시설은 피하고 고지대로 대피</span>'};
   if(/지진/.test(t)) return {title:"주변 옥외 대피 후보(학교운동장·공원)", kws:["초등학교","중학교","공원"], re:/학교|공원/,
@@ -2141,8 +2166,8 @@ function renderShelters(){
     let list=SHL().filter(s=>s.lat&&s.lng), warn="";
     if(kinds){ const sub=list.filter(s=>kinds.includes(s.type));
       if(sub.length) list=sub;
-      else { const have=[...new Set(list.map(s=>s.type))].join("·")||"없음";
-        warn='<div class="shempty" style="color:#ffcf7a;text-align:left">※ 이 상황유형에 맞는 대피소 자료가 아직 없어, 등록된 대피소('+escapeHtml(have)+')를 참고로 표시합니다.</div>'; } }
+      else { const have=[...new Set(list.map(s=>s.type))].join("·")||"없음"; list=[];
+        warn='<div class="shempty" style="text-align:left">이 유형의 지정 대피소 자료 없음<br>(등록: '+escapeHtml(have)+') — 아래 주변 시설 참고</div>'; } }
     const miss=SHL().filter(s=>s._miss).length;
     list=list.map(s=>({s, d:haversine(c.lat,c.lng,s.lat,s.lng)})).sort((a,b)=>a.d-b.d).slice(0,5);
     const row=(s,d,cm)=>{
@@ -2156,7 +2181,7 @@ function renderShelters(){
     const addMk=(s,cm)=>{ if(!dashMap) return; const pos=new kakao.maps.LatLng(s.lat,s.lng);
       const mk=new kakao.maps.CustomOverlay({position:pos,yAnchor:1,zIndex:cm?4:5,content:'<div class="shmk'+(cm?' cm':'')+'">'+(cm?'🏘 ':'🏠 ')+escapeHtml(s.name)+'</div>'});
       mk.setMap(dashMap); shelterMarkers.push(mk); };
-    const official=warn+(list.map(({s,d})=>row(s,d,false)).join("")||'<div class="shempty">표시할 대피소가 없습니다.</div>')+
+    const official=warn+(list.map(({s,d})=>row(s,d,false)).join("")||(warn?'':'<div class="shempty">표시할 대피소가 없습니다.</div>'))+
       (miss?'<div class="shempty" style="font-size:11px">※ 위치를 정확히 찾지 못한 '+miss+'곳은 제외(필요 시 data/shelters.js에 좌표 입력)</div>':'');
     clearShelterMarkers(); list.forEach(({s})=>addMk(s,false));
     const plan=communityPlan(), sec='<div class="shsec">🏘 '+escapeHtml(plan.title)+'</div>';
@@ -2209,6 +2234,67 @@ function renderRef(){
   }
   if(!window.DUTY_CONTACTS) h+='<div class="rfnote">data/contacts.js 파일이 없습니다.</div>';
   b.innerHTML=h; b.style.display="block";
+}
+// ── 보고서 탭: 상황별 대응자료 (담당부서·인근 대피소·비상단계) ──
+let rptRefT=null, rptMarkers=[], rptSeq=0, rptPicked=null;
+function scheduleRptRef(){ clearTimeout(rptRefT); rptRefT=setTimeout(rptRefRender,350); }
+function rptText(){ return (window.__reportType||"")+" "+(($("f_title")&&$("f_title").value)||"")+" "+(($("f_jangso")&&$("f_jangso").value)||""); }
+function rptClearMk(){ rptMarkers.forEach(m=>{try{m.setMap(null);}catch(e){}}); rptMarkers=[]; }
+function rptFocus(lat,lng){ if(kakaoMap){ try{ kakaoMap.setCenter(new kakao.maps.LatLng(lat,lng)); kakaoMap.setLevel(3); }catch(e){} } }
+function rptRefRender(){
+  const card=$("rptRefCard"), box=$("rptRef"); if(!card||!box) return;
+  const type=(window.__reportType||"").trim(), t=rptText();
+  if(!type && !(($("f_jangso")&&$("f_jangso").value)||"").trim()){ card.style.display="none"; return; }
+  const my=++rptSeq; card.style.display="block";
+  const row=(k,v,tel)=>'<div class="rrow"><span class="k">'+escapeHtml(k)+'</span><span class="v">'+v+'</span>'+(tel?telA(tel):'')+'</div>';
+  // ① 담당부서
+  let duty='<div class="rsec">📞 담당부서'+(type?' — '+escapeHtml(type):'')+'</div>'; const seen={}; let n=0;
+  (window.DUTY_CONTACTS||[]).forEach(d=>{ if(d.re.test(t)) d.list.forEach(x=>{ const k=x[1]+x[3]; if(!seen[k]){ seen[k]=1; n++; duty+=row(x[0], escapeHtml(x[1]), x[3]); } }); });
+  const m=window.DUTY_MAIN; if(m) duty+=row(m[0], escapeHtml(m[1]), m[3]);
+  if(!n) duty+='<div class="rnote">이 유형의 지정 담당부서가 없어 총괄(안전과)만 표시합니다.</div>';
+  // ② 비상단계 기준 (해당 유형만)
+  let stg=""; (window.EMERGENCY_STAGES||[]).filter(e=>e.re.source!=="." && e.re.test(t)).forEach(e=>{
+    stg+='<div class="rsec">🚨 비상단계 기준 — '+escapeHtml(e.title)+'</div>'+e.stages.map(([a,b])=>'<div class="rstg"><b>'+escapeHtml(a)+'</b>'+escapeHtml(b)+'</div>').join(""); });
+  // ③ 인근 대피소
+  const c=window.__reportCoords;
+  const head='<div class="rsec">🏠 인근 대피소 <span style="color:var(--dim);font-weight:400;font-size:11px">발생위치 기준 가까운 순</span></div>';
+  const paint=sh=>{ if(my!==rptSeq) return; box.innerHTML=duty+head+sh+stg; };
+  if(!c){ paint('<div class="rnote">발생위치 좌표가 확인되면 인근 대피소를 표시합니다.</div>'); rptClearMk(); return; }
+  paint('<div class="rnote">대피소 위치 확인 중…</div>');
+  geocodeShelters(()=>{
+    if(my!==rptSeq) return;
+    const kinds=shelterKinds(t); let list=SHL().filter(s=>s.lat&&s.lng), warn="";
+    if(kinds){ const sub=list.filter(s=>kinds.includes(s.type)); if(sub.length) list=sub; else { list=[]; warn='<div class="rnote">이 유형의 지정 대피소 자료 없음 (등록: 지진해일 긴급대피장소) — 아래 주변 시설 참고</div>'; } }
+    list=list.map(s=>({s,d:haversine(c.lat,c.lng,s.lat,s.lng)})).sort((a,b)=>a.d-b.d).slice(0,3);
+    const fmt=d=>d<1?Math.round(d*1000)+"m":d.toFixed(1)+"㎞";
+    const srow=(s,d,cm)=>'<div class="rrow clk" onclick="rptFocus('+s.lat+','+s.lng+')"><span class="v"><b style="color:#fff">'+escapeHtml(s.name)+'</b><span class="rtag'+(cm?' cm':'')+'">'+escapeHtml(s.type||"")+'</span>'+
+      ((s.area||s.addr)?'<div style="font-size:11.5px;color:#9fb0cc">'+escapeHtml(s.area||s.addr)+'</div>':'')+'</span><span class="d">'+fmt(d)+'</span></div>';
+    const official=warn+list.map(({s,d})=>srow(s,d,false)).join("");
+    const plan=communityPlan(t);
+    rptClearMk();
+    const addMk=(s,cm)=>{ if(!kakaoMap||!window.kakao||!kakao.maps) return; try{ const mk=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(s.lat,s.lng),yAnchor:1,zIndex:cm?4:5,content:'<div class="shmk'+(cm?' cm':'')+'">'+(cm?'🏘 ':'🏠 ')+escapeHtml(s.name)+'</div>'}); mk.setMap(kakaoMap); rptMarkers.push(mk);}catch(e){} };
+    list.forEach(({s})=>addMk(s,false));
+    paint(official+'<div class="rnote" style="font-weight:700;color:#ffd38a;margin-top:8px">🏘 '+escapeHtml(plan.title)+'</div><div class="rnote">검색 중…</div>');
+    nearbyCommunity(c, plan, cms=>{
+      if(my!==rptSeq) return;
+      cms.forEach(s=>addMk(s,true));
+      rptPicked={official:list.map(x=>({name:x.s.name,d:x.d})), cm:cms.slice(0,3).map(x=>({name:x.name,d:x.d}))};
+      const cmHtml=cms.length ? cms.map(s=>srow(s,s.d,true)).join("")+'<div class="rnote">※ 지정 대피소 아님 — 임시 대피·집결 장소로 참고<br>'+plan.note+'</div>'
+        : '<div class="rnote">반경 '+(CM_RADIUS/1000)+'㎞ 내 검색 결과 없음</div>';
+      paint(official+'<div class="rnote" style="font-weight:700;color:#ffd38a;margin-top:8px">🏘 '+escapeHtml(plan.title)+'</div>'+cmHtml+
+        '<button class="rbtn" onclick="rptAddShelters()">＋ 보고서 \'향후 전망 및 대책\'에 대피장소 넣기</button>');
+    });
+  });
+}
+function rptAddShelters(){
+  if(!rptPicked) return; const fmt=d=>d<1?Math.round(d*1000)+"m":d.toFixed(1)+"㎞";
+  const a=[...rptPicked.official,...rptPicked.cm].sort((x,y)=>x.d-y.d).slice(0,4).map(x=>x.name+"("+fmt(x.d)+")");
+  if(!a.length) return;
+  const line="- 인근 대피장소 : "+a.join(", ");
+  const o=$("f_outlook"); if(!o) return;
+  o.value=(o.value.replace(/\n?- 인근 대피장소 :[^\n]*/g,"").trim()+"\n"+line).trim();
+  o.dispatchEvent(new Event("input",{bubbles:true}));
+  showMsg("'향후 전망 및 대책'에 인근 대피장소를 넣었습니다. 실제 개방 여부는 확인하세요.","warn");
 }
 function focusShelter(lat,lng){ if(dashMap){ try{ dashMap.setCenter(new kakao.maps.LatLng(lat,lng)); dashMap.setLevel(3); }catch(e){} } }
 

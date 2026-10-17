@@ -67,4 +67,4 @@ window.FIREBASE_CONFIG = {
 //    로그인하지 않은 곳에서는 상황일지·동원현황을 고치거나 지울 수 없습니다.
 window.REQUIRE_LOGIN = true;
 //  · 공용 계정 이메일을 넣어두면 로그인 화면에 미리 채워져 비밀번호만 입력하면 됩니다. (비워도 됨)
-window.LOGIN_EMAIL = "";
+window.LOGIN_EMAIL = "gkdlrkdgml@naver.com";

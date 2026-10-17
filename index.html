@@ -351,7 +351,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.14a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.17a</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -944,7 +944,7 @@ function fillTrain(t, loc, mtnType){
     // '훈련○○(건물)' / '○○훈련○○' → 배정된 실제 장소명
     .replace(/(?:○○\s*)?훈련\s*(?:아파트|빌딩|건물|공장|주택|프라자|플라자|타워|시장|백화점|마트|점포|상회|병원|요양원|학교|호텔|리조트|콘도|펜션|센터|스포츠센터|회관|주유소|충전소|터널)(?:\s*\(\s*건물\s*\))?/g, place)
     // ○○<건물명사> → 배정 장소 (지역치환보다 먼저: '○○시장'→장소, '○○터널'→'지흥터널')
-    .replace(/○○\s*(?:대형\s*)?(?:스포츠\s*)?(?:터널|시장|공장|스포츠센터|센터|아파트|빌딩|주차장|충전소|경기장|병원|학교|행사장|축제행사장)/g, place)
+    .replace(/○○\s*(?:대형\s*)?(?:스포츠\s*)?(?:터널|시장|공장|스포츠센터|센터|아파트|빌딩|주차장|주유소|LPG\s*충전소|충전소|경기장|요양병원|요양원|병원|학교|호텔|리조트|마트|백화점|행사장|축제행사장)/gi, place)
     // ○○ 지역·동·리
     .replace(/○○시\s*\(\s*군[,·]?\s*구?\s*\)|○○\(시군구\)|○○시군구|○○시\/?군|○○시(?!장|설|청)/g,"동해시")
     .replace(/○○구\s*\(\s*읍[,·]?\s*면[,·]?\s*동\s*\)|○○읍\s*\(\s*면[·,]?\s*동\s*\)|○○읍면동|○○읍|○○면|○○동|○○리/g, dong)
@@ -2163,7 +2163,10 @@ function lReadNew(box){ const t=box.querySelector("tr.mrow-new"); if(!t) return 
 function lCommitNew(k, focusNext){ const c=LCFG[k]; const box=$(c.list); const v=lReadNew(box);
   if(!v || (!v.a && !v.n)){ if(focusNext){ const nb=box.querySelector("tr.mrow-new [data-f='a']"); if(nb) nb.focus(); } return; }
   const e={a:v.a, n:v.n, ts:Date.now()};
-  if(fbReady){ fbDB.ref(c.ref).push(e); } else { const arr=LS.get(c.ls,[]); arr.push({...e,id:Date.now()}); LS.set(c.ls,arr); lRender(k); }
+  // 입력줄을 비우고 커서를 빼야 표를 다시 그릴 수 있음(입력 중 보호장치 해제) + 중복 저장 방지
+  const nr=box.querySelector("tr.mrow-new"); if(nr) nr.querySelectorAll("[data-new]").forEach(x=>x.textContent="");
+  if(box.contains(document.activeElement)) document.activeElement.blur();
+  if(fbReady){ fbDB.ref(c.ref).push(e); lRender(k); } else { const arr=LS.get(c.ls,[]); arr.push({...e,id:Date.now()}); LS.set(c.ls,arr); lRender(k); }
   if(focusNext){ setTimeout(()=>{ const nb=$(c.list).querySelector("tr.mrow-new [data-f='a']"); if(nb) nb.focus(); }, fbReady?150:30); }
 }
 function lRender(k){ const c=LCFG[k]; const box=$(c.list); if(!box)return;

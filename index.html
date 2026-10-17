@@ -278,6 +278,18 @@
   #logMacros .lmac:hover{background:#1d3a5c;border-color:var(--cyan)}
   #logMacros .lmac .lmn{color:#8fd0ff;font-weight:800;margin-right:5px}
   body.view-only #logMacros{display:none !important}
+  #logCheck{padding:8px 2px 2px;max-height:300px;overflow-y:auto}
+  #logCheck .lchd{font-size:13px;font-weight:800;color:#9fe0b0;margin:2px 0 6px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+  #logCheck .lchd span{font-size:11px;font-weight:600;color:#7b8da6}
+  #logCheck .lcg{font-size:11.5px;font-weight:800;color:#ffd38a;margin:8px 0 4px}
+  #logCheck .lcwrap{display:flex;flex-wrap:wrap;gap:6px}
+  #logCheck .lci{background:#15283f;border:1px solid #2a567e;color:#dce9ff;border-radius:8px;padding:7px 11px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;line-height:1.35}
+  #logCheck .lci:hover{background:#1d3a5c;border-color:var(--cyan)}
+  #logCheck .lci .bx{display:inline-block;width:14px;color:#7b8da6;margin-right:4px}
+  #logCheck .lci.done{background:#0f2a1c;border-color:#2a6b44;color:#8fbf9f;cursor:default}
+  #logCheck .lci.done .bx{color:#7fe0a0}
+  #logCheck .lci.done .tm{color:#7fe0a0;font-weight:800;margin-left:6px;font-size:12px}
+  body.view-only #logCheck{display:none !important}
   .dbtn.sm{padding:8px 12px;font-size:13.5px}
   .logrow{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
   .logrow .lt{font-size:16px;color:var(--cyan);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:1px}
@@ -389,7 +401,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.18a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.18b</span>
   </div>
 
   <div class="wrap" id="pageReport">
@@ -671,8 +683,10 @@
           <button class="dbtn ghost sm" onclick="copyLog()">📋 복사</button>
           <button class="dbtn ghost sm" onclick="clearLog()">전체삭제</button>
           <button class="dbtn ghost sm" id="logMacroBtn" title="자주 쓰는 문구를 현재 시각으로 기록" onclick="toggleLogMacros(this)">⚡ 자주쓰는 문구</button>
+          <button class="dbtn ghost sm" id="logCheckBtn" title="상황유형별 대응 체크리스트 (2026 안전관리계획) — 누르면 상황일지에 기록" onclick="toggleChecks(this)">✅ 대응 체크리스트</button>
         </div>
         <div id="logMacros" style="display:none"></div>
+        <div id="logCheck" style="display:none"></div>
       </div>
       <!-- 동원 인력·장비 -->
       <div class="panel c-mob">
@@ -721,7 +735,7 @@
 // 데이터 파일을 매번 최신으로 로드 (브라우저 캐시 방지 — 새로고침만 해도 반영됨)
 (function(){
   var v=Date.now();
-  var files=["config","disaster-types","locations","shelters","contacts","gaeyo-templates","cbs-templates","jihwi-templates","hwpx-template"];
+  var files=["config","disaster-types","locations","shelters","contacts","checklists","gaeyo-templates","cbs-templates","jihwi-templates","hwpx-template"];
   files.forEach(function(f){ document.write('<scr'+'ipt src="data/'+f+'.js?t='+v+'"><\/scr'+'ipt>'); });
 })();
 </script>
@@ -1277,7 +1291,7 @@ function reportText(){
   ].join("\n");
 }
 
-function setTraining(on){$("training").checked=on;$("trainTag").style.display=on?"inline":"none";$("statusDot").className="dot"+(on?" train":"");}
+function setTraining(on){ if(typeof scheduleRptRef==="function") setTimeout(scheduleRptRef,0); $("training").checked=on;$("trainTag").style.display=on?"inline":"none";$("statusDot").className="dot"+(on?" train":"");}
 
 // ── 기상특보 상황전파 메시지 파서 ──
 function parseWeatherAlert(text){
@@ -1945,6 +1959,7 @@ function saveSit(){
 let sitPanelT=null;
 function sitPanelsRefresh(){ clearTimeout(sitPanelT); sitPanelT=setTimeout(()=>{
   if(typeof refOn!=="undefined" && refOn) renderRef();
+  if(typeof checkOn!=="undefined" && checkOn) renderChecks();
   if(typeof shelterOn!=="undefined" && shelterOn && window.__dashCoords) renderShelters(); }, 700); }
 function applyRemoteSit(s){
   if(!s) return; const af=document.activeElement;  // 입력 중인 칸은 덮어쓰지 않음
@@ -2255,6 +2270,18 @@ function rptRefRender(){
   // ② 비상단계 기준 (해당 유형만)
   let stg=""; (window.EMERGENCY_STAGES||[]).filter(e=>e.re.source!=="." && e.re.test(t)).forEach(e=>{
     stg+='<div class="rsec">🚨 비상단계 기준 — '+escapeHtml(e.title)+'</div>'+e.stages.map(([a,b])=>'<div class="rstg"><b>'+escapeHtml(a)+'</b>'+escapeHtml(b)+'</div>').join(""); });
+  // ④ 보고서 문안 제안 (실제 상황만 — 훈련은 훈련 문안을 쓰므로 제외)
+  const isTrainNow=(typeof trainState!=="undefined" && trainState) || ($("training")&&$("training").checked);
+  const gl=rptGuideLines(t);
+  let guide="";
+  if(gl.action.length||gl.outlook.length){
+    guide='<div class="rsec">📝 보고서 문안 제안 <span style="color:var(--dim);font-weight:400;font-size:11px">2026 안전관리계획 기준</span></div>';
+    if(isTrainNow) guide+='<div class="rnote">훈련 상황에는 적용하지 않습니다 (훈련 문안 사용).</div>';
+    else guide+=(gl.action.length?'<div class="rstg"><b>5. 조치사항</b>'+gl.action.map(escapeHtml).join(" / ")+'</div>':'')+
+      (gl.outlook.length?'<div class="rstg"><b>7. 향후대책</b>'+gl.outlook.map(escapeHtml).join(" / ")+'</div>':'')+
+      '<button class="rbtn" onclick="rptAddGuide()">＋ 보고서에 문안 넣기 (조치사항·향후 전망 및 대책)</button><div class="rnote">※ 실제 진행된 조치에 맞게 고쳐서 사용하세요.</div>';
+  }
+  duty=guide+duty;
   // ③ 인근 대피소
   const c=window.__reportCoords;
   const head='<div class="rsec">🏠 인근 대피소 <span style="color:var(--dim);font-weight:400;font-size:11px">발생위치 기준 가까운 순</span></div>';
@@ -2285,6 +2312,20 @@ function rptRefRender(){
         '<button class="rbtn" onclick="rptAddShelters()">＋ 보고서 \'향후 전망 및 대책\'에 대피장소 넣기</button>');
     });
   });
+}
+function rptGuideLines(t){ const a=[],o=[],sa={},so={};
+  (window.RESPONSE_GUIDE||[]).forEach(g=>{ if(t.trim() && g.re.test(t)){ (g.action||[]).forEach(x=>{ if(!sa[x]){sa[x]=1;a.push(x);} }); (g.outlook||[]).forEach(x=>{ if(!so[x]){so[x]=1;o.push(x);} }); } });
+  return {action:a.slice(0,4), outlook:o.slice(0,3)}; }
+function rptAddGuide(){
+  if((typeof trainState!=="undefined" && trainState) || ($("training")&&$("training").checked)){ showMsg("훈련 상황에는 문안 제안을 적용하지 않습니다.","warn"); return; }
+  const gl=rptGuideLines(rptText());
+  const put=(id,lines)=>{ const el=$(id); if(!el||!lines.length) return 0;
+    let v=el.value.trim(); if(/^확인\s*중$/.test(v)) v="";
+    const add=lines.filter(x=>!v.includes(x)).map(x=>"- "+x);
+    if(!add.length) return 0;
+    el.value=(v?v+"\n":"")+add.join("\n"); el.dispatchEvent(new Event("input",{bubbles:true})); return add.length; };
+  const n=put("f_action",gl.action)+put("f_outlook",gl.outlook);
+  showMsg(n?"조치사항·향후 전망 및 대책에 문안을 넣었습니다. 실제 진행 상황에 맞게 고쳐 주세요.":"이미 들어가 있는 문안입니다.","warn");
 }
 function rptAddShelters(){
   if(!rptPicked) return; const fmt=d=>d<1?Math.round(d*1000)+"m":d.toFixed(1)+"㎞";
@@ -2335,6 +2376,37 @@ function quickLog(i){ const t=(LOG_MACROS[i]||"").trim(); if(!t)return;
   else { const logs=getLogs(); logs.push({...entry, id:Date.now()}); setLogs(logs); }
   if($("logTime")) $("logTime").value="";
 }
+// ── 유형별 대응 체크리스트 (data/checklists.js) — 누르면 상황일지에 기록, 기록된 항목은 ✓ 표시(공유 일지 기준) ──
+let checkOn=false;
+function checkGroups(txt){ const t=txt!=null?txt:sitText(); return (window.RESPONSE_GUIDE||[]).filter(g=>t.trim() && g.re.test(t)); }
+function toggleChecks(btn){ const box=$("logCheck"); if(!box) return;
+  checkOn=!checkOn; box.style.display=checkOn?"block":"none"; if(btn) btn.classList.toggle("on",checkOn);
+  if(checkOn) renderChecks(); }
+function renderChecksIfOpen(){ if(checkOn) renderChecks(); }
+function renderChecks(){
+  const box=$("logCheck"); if(!box) return;
+  const type=(($("dsType")&&$("dsType").value)||"").trim();
+  const logs=activeLogs(); const doneAt=txt=>{ const l=logs.filter(x=>(x.x||"").trim()===txt).sort((a,b)=>(a.ts||0)-(b.ts||0))[0]; return l?(l.t||"✓"):null; };
+  const btn=txt=>{ const d=doneAt(txt);
+    return '<button class="lci'+(d?' done':'')+'" '+(d?'title="기록됨"':'onclick="checkLog(this)" data-t="'+escapeHtml(txt)+'"')+'><span class="bx">'+(d?'✓':'☐')+'</span>'+escapeHtml(txt)+(d?'<span class="tm">'+escapeHtml(d)+'</span>':'')+'</button>'; };
+  const groups=checkGroups();
+  let h='<div class="lchd">✅ '+(type?'「'+escapeHtml(type)+'」 ':'')+'대응 체크리스트<span>2026 안전관리계획 · 누르면 현재 시각으로 상황일지에 기록</span></div>';
+  h+='<div class="lcg">공통 (초기 상황관리)</div><div class="lcwrap">'+(window.CHECK_COMMON||[]).map(btn).join("")+'</div>';
+  const seen={};
+  groups.forEach(g=>{ const items=g.check.filter(x=>!seen[x]&&(seen[x]=1)); if(items.length) h+='<div class="lcg">'+escapeHtml(g.name)+'</div><div class="lcwrap">'+items.map(btn).join("")+'</div>'; });
+  if(!type) h+='<div class="lcg" style="color:var(--dim);font-weight:600">상단 \'상황 유형\'을 입력하면 유형별 항목이 추가됩니다.</div>';
+  else if(!groups.length) h+='<div class="lcg" style="color:var(--dim);font-weight:600">이 유형의 별도 체크리스트는 없습니다 — 공통 항목을 참고하세요.</div>';
+  if(!window.RESPONSE_GUIDE) h+='<div class="lcg" style="color:#ff9a9c">data/checklists.js 파일이 없습니다.</div>';
+  box.innerHTML=h;
+}
+function checkLog(el){ const t=(el&&el.getAttribute("data-t")||"").trim(); if(!t) return;
+  el.classList.add("done"); el.removeAttribute("onclick");
+  const tm=($("logTime")&&$("logTime").value.trim())||nowHM();
+  const entry={t:tm, x:t, ts:Date.now()};
+  if(fbReady){ fbDB.ref("logs").push(entry); }
+  else { const logs=getLogs(); logs.push({...entry, id:Date.now()}); setLogs(logs); }
+  if($("logTime")) $("logTime").value="";
+}
 function delLog(id){
   if(fbReady){ fbDB.ref("logs/"+id).remove(); }
   else { setLogs(getLogs().filter(l=>String(l.id)!==String(id))); }
@@ -2349,6 +2421,7 @@ function editLogTime(id,tm){   // 행의 시각 수정
   else { const logs=getLogs(); const l=logs.find(x=>String(x.id)===String(id)); if(l){ l.t=tm; LS.set("dh_log",logs); } }
 }
 function renderLog(){
+  setTimeout(renderChecksIfOpen,0);   // 체크리스트 ✓ 표시 갱신
   // 과거가 위, 최신이 아래로 쌓이도록 시간순(오름차순) 정렬
   const logs=activeLogs().slice().sort((a,b)=>((a.ts||+a.id||0)-(b.ts||+b.id||0)));
   const box=$("logList");

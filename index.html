@@ -137,6 +137,26 @@
   .lvl-pill{display:inline-flex;align-items:center;gap:6px;font-size:20px;font-weight:900;padding:4px 13px;border-radius:9px;white-space:nowrap}
   .boardbtns{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:430px}
   .boardbtns .dbtn{padding:6px 10px;font-size:12.5px;white-space:nowrap}
+  /* 맞춤법 검사 */
+  .spbtn2{background:#1f3b2c!important;color:#9ff0c4!important;border:1px solid #2f7a52!important}
+  .spbtn3{background:#14304d!important;color:#a9d4ff!important;border:1px solid #2a567e!important}
+  #spDlg{position:fixed;inset:0;z-index:9100;background:rgba(3,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px}
+  #spDlg .spw{background:#111d31;border:1px solid #2f7a52;border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.6);color:#dce6f5}
+  #spDlg h4{margin:0 0 6px;font-size:18px;color:#fff}
+  #spDlg .spd{font-size:12.5px;color:#9fb0cc;line-height:1.6;margin-bottom:10px}
+  #spDlg .spf{font-size:12px;font-weight:800;color:#8fd0ff;margin:12px 0 2px}
+  #spDlg label.spi{display:flex;gap:9px;align-items:flex-start;padding:8px 4px;border-top:1px solid #213a58;cursor:pointer;font-size:14px;line-height:1.55}
+  #spDlg label.spi input{margin-top:4px;flex-shrink:0;width:16px;height:16px}
+  #spDlg .spk{flex-shrink:0;font-size:11px;font-weight:700;border-radius:5px;padding:1px 6px;margin-top:2px;background:#24384f;color:#c9d6e8;white-space:nowrap}
+  #spDlg .spk.k1{background:#3a2a10;color:#ffd27a} #spDlg .spk.k2{background:#123a5e;color:#9fd2ff} #spDlg .spk.k3{background:#2c1f45;color:#d6b8ff}
+  #spDlg .spc{flex:1;min-width:0;word-break:break-all}
+  #spDlg .spc del{color:#ff9a9c;background:rgba(229,72,77,.15);text-decoration:line-through;border-radius:3px;padding:0 2px}
+  #spDlg .spc ins{color:#7ff0b4;background:rgba(48,180,110,.16);text-decoration:none;border-radius:3px;padding:0 2px;font-weight:700}
+  #spDlg .spc .ctx{color:#8fa3bf}
+  #spDlg .spbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  #spDlg .spbar button{padding:9px 16px;border-radius:8px;border:1px solid #2f7a52;background:#1f5a3c;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
+  #spDlg .spbar button.g{background:none;border-color:#33465f;color:#9fb0cc}
+  #spDlg .spok{padding:18px 6px;font-size:15px;color:#7ff0b4;font-weight:700}
   /* 가져오기 확인·복원 대화상자 */
   #bkDlg{position:fixed;inset:0;z-index:9000;background:rgba(3,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px}
   #bkDlg .bkw{background:#111d31;border:1px solid #2a567e;border-radius:14px;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
@@ -479,7 +499,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.21d</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.24c</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -602,6 +622,8 @@
             <div class="jrow" style="margin-top:8px;margin-bottom:0">
               <span class="cnt" id="jCnt" style="font-size:11.5px;color:var(--dim)"></span>
               <button class="cbtn" id="jSmsBtn" style="margin-left:auto;display:none;background:#2a567e;color:#dce9ff">🖥 문자전송시스템 열기</button>
+              <button class="cbtn spbtn3" onclick="openWebSpeller('jOut',this)" title="문자를 복사하고 부산대(바른한글) 맞춤법 검사기를 새 창으로 엽니다 — 열린 창에 붙여넣기(Ctrl+V) 하세요">🌐 맞춤법 검사</button>
+              <button class="cbtn spbtn2" id="spBtnJ" onclick="spellCheck(['jOut'],this)" title="맞춤법·띄어쓰기 검사 (이 PC 안에서만 검사)">✓ 맞춤법</button>
               <button class="cbtn" id="jCopy">문자 복사</button>
             </div>
             <div class="hint">1보는 메시지의 진행상황을 그대로 반영합니다. <b style="color:#f5a623">2보·3보·종결은 '예시 틀'</b>이니 실제 상황(구조 인원·피해 등)을 확인해 ○○ 빈칸을 채운 뒤 발송하세요.</div>
@@ -680,7 +702,9 @@
             <textarea id="cbsText"></textarea>
             <div class="row">
               <span class="cnt" id="cbsCnt"></span>
-              <button class="cbtn" id="cbsCopy">문자 복사</button>
+              <button class="cbtn spbtn3" style="margin-left:auto" onclick="openWebSpeller('cbsText',this)" title="문자를 복사하고 부산대(바른한글) 맞춤법 검사기를 새 창으로 엽니다 — 열린 창에 붙여넣기(Ctrl+V) 하세요">🌐 맞춤법 검사</button>
+              <button class="cbtn spbtn2" id="spBtnC" style="margin-left:6px" onclick="spellCheck(['cbsText'],this)" title="맞춤법·띄어쓰기 검사 (이 PC 안에서만 검사)">✓ 맞춤법</button>
+              <button class="cbtn" id="cbsCopy" style="margin-left:6px">문자 복사</button>
               <button class="cbtn" id="cbsSend" style="background:#c0392b;color:#fff" title="재난문자 발송시스템(KPAS) 새 창으로 열기" onclick="window.open(window.CBS_SYSTEM_URL||'https://kpas.ndms.go.kr/IDSP/','_blank','noopener')">📤 발송시스템</button>
             </div>
             <div class="hint">행정안전부 표준문안 기반. ○○(지역·시각·시설명)은 신고내역에서 자동 반영됩니다. 유형에 안 맞는 시설명 치환이나 발송 여부는 직접 확인하세요.</div>
@@ -818,7 +842,7 @@
 // 데이터 파일을 매번 최신으로 로드 (브라우저 캐시 방지 — 새로고침만 해도 반영됨)
 (function(){
   var v=Date.now();
-  var files=["config","disaster-types","locations","shelters","contacts","checklists","gaeyo-templates","cbs-templates","jihwi-templates","hwpx-template"];
+  var files=["config","disaster-types","locations","shelters","contacts","checklists","gaeyo-templates","cbs-templates","jihwi-templates","hwpx-template","spellcheck"];
   files.forEach(function(f){ document.write('<scr'+'ipt src="data/'+f+'.js?t='+v+'"><\/scr'+'ipt>'); });
 })();
 </script>
@@ -2900,6 +2924,115 @@ function spotRetime(id){ const o=spotById(id); if(!o) return; const v=prompt("�
 function spotDel(id){ const o=spotById(id); if(!o) return; if(!confirm(circNo(o.n)+" "+o.name+" 지점을 지울까요?")) return; spots=spots.filter(x=>x.id!==id); pushSpots(); }
 function focusSpot(id){ const o=spotById(id); if(!o||!dashMap) return; try{ dashMap.setCenter(new kakao.maps.LatLng(o.lat,o.lng)); if(dashMap.getLevel()>5) dashMap.setLevel(5); }catch(e){} }
 
+// ── 맞춤법·띄어쓰기 검사 (규칙: data/spellcheck.js · 오프라인, 내용이 외부로 나가지 않음) ──
+const SP_FIELD_NAME={jOut:"지휘부 안내문자",cbsText:"재난문자(CBS)",f_title:"제목",f_gaeyo:"3. 상황 개요",f_action:"가. 조치사항",f_outlook:"7. 향후 전망 및 대책",f_property:"재산 피해",f_other:"기타",logInput:"상황일지 입력"};
+function hJong(ch){ const c=ch.charCodeAt(0); return (c>=0xAC00&&c<=0xD7A3)?(c-0xAC00)%28:-1; }
+function isHan(ch){ return !!ch && /[가-힣]/.test(ch); }
+function spellRules(){
+  if(spellRules._r) return spellRules._r;
+  const R=[];
+  const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  // ① 단어 바꾸기
+  (window.SPELL_WORDS||[]).forEach(([a,b,k])=>{ if(a&&b&&a!==b) R.push({k:k||"맞춤법", re:new RegExp(esc(a),"g"), fix:()=>b, why:"‘"+a+"’ → ‘"+b+"’"}); });
+  // ② ㄹ 수 있다/없다
+  R.push({k:"띄어쓰기", re:/([가-힣])( ?)수( ?)(있|없)/g, fix:(m,c,s1,s2,v)=> (hJong(c)!==8 || (s1&&s2)) ? null : c+" 수 "+v, why:"‘-ㄹ 수 있다/없다’의 ‘수’는 띄어 씁니다"});
+  // ③ -ㄴ/-ㄹ 것
+  R.push({k:"띄어쓰기", re:/([가-힣])것(?=[이은을으도만과에]|입니다|임|[\s.,·)]|$)/g, fix:(m,c,off,str)=>{ const j=hJong(c); if(j!==4 && j!==8) return null; if(/[날탈들생]/.test(c) && !isHan(str[off-1])) return null; return c+" 것"; }, why:"‘것’은 앞말과 띄어 씁니다 (예: 할 것, 하는 것)"});
+  // ④ OO 중
+  R.push({k:"띄어쓰기", re:new RegExp("("+(window.SPELL_JUNG_NOUNS||"진행")+")중(?=[이에인으은을도]|입니다|임|[\\s.,·)/]|$)","g"), fix:(m,n)=>n+" 중", why:"‘~하는 동안’의 ‘중’은 띄어 씁니다 (예: 진행 중)"});
+  // ⑤ OO 등
+  const ex=(window.SPELL_DEUNG_EXCEPT||[]);
+  R.push({k:"띄어쓰기", re:/([가-힣]+)등(?=[\s.,·)/]|$|을|이|의|에|과|으로|에서)/g, fix:(m,w)=>{ const word=w+"등"; if(ex.some(e=>word.endsWith(e))) return null; return w+" 등"; }, why:"나열 뒤의 ‘등’은 띄어 씁니다 (예: 소방서 등)"});
+  // ⑥ -ㄹ 때
+  R.push({k:"띄어쓰기", re:/([가-힣])때(?=[는에도부까마의]|[\s.,]|$)/g, fix:(m,c)=> hJong(c)===8 ? c+" 때" : null, why:"‘때’는 앞말과 띄어 씁니다 (예: 할 때)"});
+  // ⑦ -지 않다/못하다
+  R.push({k:"띄어쓰기", re:/([가-힣])지(않|못)/g, fix:(m,c,v)=>c+"지 "+v, why:"‘-지 않다/못하다’는 띄어 씁니다"});
+  // ⑧ -야 하다
+  R.push({k:"띄어쓰기", re:/(해|돼|되어|어|아|워|와|봐|써|가|줘|져|켜|춰|여)야(할|한다|합니다|하며|하고|함|하는|하겠|해서|했|하므로|하나)/g, fix:(m,c,v)=>c+"야 "+v, why:"‘-어야 하다’는 띄어 씁니다 (예: 해야 한다)"});
+  // ⑨ 출동 하였다 → 출동하였다
+  const HN=window.SPELL_HADA_NOUNS||"출동";
+  R.push({k:"띄어쓰기", re:new RegExp("("+HN+")\\s+(하였|했|하여|하고|하는|한다|합니다|하겠|하며|하면|하기|하도록|하였음|함(?![께])|한(?=[\\s.,]|$)|할(?=[\\s.,]|$)|해(?=[\\s.,]|$))","g"), fix:(m,n,v)=>n+v, why:"‘출동하다·도착하다’처럼 ‘-하다’는 붙여 씁니다"});
+  // ⑨-2 확인 되었다 → 확인되었다 / 대피 해야 → 대피해야
+  R.push({k:"띄어쓰기", re:new RegExp("("+HN+")\\s+(되었|됐|되어|되지|되는|된다|됩니다|되고|되며|되면|되므로|됨|될(?=[\\s.,]|$)|된(?=[\\s.,]|$)|해야|하지|해서|하여야)","g"), fix:(m,n,v)=>n+v, why:"‘확인되다·대피하다’처럼 붙여 씁니다"});
+  // ⑨-3 할께·될께 → 할게·될게 (‘1일께’ 같은 ‘무렵’ 뜻은 제외)
+  R.push({k:"맞춤법", re:/([가-힣])께(?=요|[\s.,!]|$)/g, fix:(m,c,off,str)=>{ if(hJong(c)!==8 || c==="일" || c==="들" || /\d/.test(str[off-1]||"")) return null; return c+"게"; }, why:"‘-ㄹ게’는 ‘께’가 아니라 ‘게’로 씁니다"});
+  // ⑨-4 악화시 → 악화 시 (‘비상시·유사시·평상시’는 한 단어라 제외)
+  R.push({k:"띄어쓰기", re:/(악화|발생|도착|출동|필요|우천|강우|강설|적설|침수|정전|화재|사고|위급|긴급|이상|발견|확인|대피|통제|해제|발령|발효|미준수|위반|접수|만조|강풍|폭설|호우|결빙|고장|미착용|음주|위험|부재)시(?=[\s,.]|$|에|는|까지)/g, fix:(m,n)=>n+" 시", why:"‘~할 때’의 ‘시’는 띄어 씁니다 (예: 악화 시)"});
+  // ⑩ 문장부호·공백
+  R.push({k:"문장부호", re:/ {2,}/g, fix:()=>" ", why:"빈칸이 두 번 이상 들어갔습니다"});
+  R.push({k:"문장부호", re:/ +([.,!?)])/g, fix:(m,p)=>p, why:"문장부호 앞의 빈칸을 뺍니다"});
+  R.push({k:"문장부호", re:/\( +/g, fix:()=>"(", why:"괄호 안쪽 빈칸을 뺍니다"});
+  return (spellRules._r=R);
+}
+function spellFind(text){
+  const out=[];
+  spellRules().forEach(r=>{ r.re.lastIndex=0; let m;
+    while((m=r.re.exec(text))){ if(!m[0]){ r.re.lastIndex++; continue; }
+      const args=[...m, m.index, text]; let to=null; try{ to=r.fix(...args); }catch(e){ to=null; }
+      if(to!=null && to!==m[0]) out.push({s:m.index, e:m.index+m[0].length, from:m[0], to, k:r.k, why:r.why}); } });
+  out.sort((a,b)=>a.s-b.s||b.e-a.e);
+  const res=[]; let end=-1; out.forEach(o=>{ if(o.s>=end){ res.push(o); end=o.e; } });   // 겹치는 것은 앞의 것만
+  return res;
+}
+let spState=null;
+function spClose(){ $("spDlg").style.display="none"; $("spW").innerHTML=""; spState=null; }
+function spellCheck(ids,btn){
+  const groups=[]; let total=0;
+  ids.forEach(id=>{ const el=$(id); if(!el) return; const t=el.value||""; if(!t.trim()) return; const f=spellFind(t); if(f.length){ groups.push({id,items:f}); total+=f.length; } });
+  const anyText=ids.some(id=>$(id)&&($(id).value||"").trim());
+  spState=groups;
+  let h='<h4>✓ 맞춤법·띄어쓰기 검사</h4><div class="spd">재난 보고서·문자에서 자주 틀리는 표현을 <b>이 PC 안에서</b> 검사합니다(내용이 외부로 나가지 않음). 모든 오류를 잡지는 못하니 최종 확인은 직접 해 주세요.</div>';
+  if(!anyText) h+='<div class="spok" style="color:#9fb0cc">검사할 내용이 없습니다.</div>';
+  else if(!total) h+='<div class="spok">✓ 자주 틀리는 표현은 발견되지 않았습니다.</div>';
+  else {
+    h+='<div class="spd" style="color:#ffd27a;margin-bottom:0">'+total+'곳을 찾았습니다 — 고칠 항목만 체크된 상태로 두고 ‘선택한 항목 고치기’를 누르세요.</div>';
+    const kc={"맞춤법":"k1","띄어쓰기":"k2","외래어":"k3"};
+    groups.forEach((g,gi)=>{
+      const t=$(g.id).value;
+      if(ids.length>1) h+='<div class="spf">'+escapeHtml(SP_FIELD_NAME[g.id]||g.id)+'</div>';
+      g.items.forEach((o,ii)=>{
+        const a=Math.max(0,o.s-14), b=Math.min(t.length,o.e+14);
+        const ctx=(a>0?"…":"")+escapeHtml(t.slice(a,o.s).replace(/\n/g," ⏎ "))+'<del>'+escapeHtml(o.from.replace(/ /g,"␣"))+'</del><ins>'+escapeHtml(o.to.replace(/ /g,"␣"))+'</ins>'+escapeHtml(t.slice(o.e,b).replace(/\n/g," ⏎ "))+(b<t.length?"…":"");
+        h+='<label class="spi"><input type="checkbox" checked data-g="'+gi+'" data-i="'+ii+'"><span class="spk '+(kc[o.k]||"")+'">'+escapeHtml(o.k)+'</span><span class="spc"><span class="ctx">'+ctx+'</span><br><span style="font-size:12px;color:#7b8da6">'+escapeHtml(o.why)+'</span></span></label>';
+      });
+    });
+  }
+  h+='<div class="spbar">'+(total?'<button onclick="spApply()">선택한 항목 고치기</button>':'')+'<button class="g" onclick="spClose()">닫기</button></div>';
+  $("spW").innerHTML=h; $("spDlg").style.display="flex";
+}
+function spApply(){
+  if(!spState) return spClose();
+  const pick={}; document.querySelectorAll('#spW input[type=checkbox]').forEach(c=>{ if(c.checked){ (pick[c.dataset.g]=pick[c.dataset.g]||[]).push(+c.dataset.i); } });
+  let n=0;
+  spState.forEach((g,gi)=>{ const sel=pick[gi]; if(!sel||!sel.length) return; const el=$(g.id); let t=el.value;
+    sel.map(i=>g.items[i]).sort((a,b)=>b.s-a.s).forEach(o=>{ if(t.slice(o.s,o.e)===o.from){ t=t.slice(0,o.s)+o.to+t.slice(o.e); n++; } });
+    el.value=t; el.dispatchEvent(new Event("input",{bubbles:true}));
+    if(g.id==="jOut" && $("jCnt")) $("jCnt").textContent=`${[...t].length}자 · 약 ${byteLen(t)}바이트`;
+  });
+  // 고친 뒤 새로 드러난 곳(예: ‘대피 해야한다’ → ‘대피해야한다’ → ‘대피해야 한다’)이 있으면 이어서 보여줌
+  const ids=spState.map(g=>g.id); spState=null;
+  const more=ids.reduce((k,id)=>k+spellFind(($(id)||{}).value||"").length,0);
+  if(more){ spellCheck(ids); const d=$("spW").querySelector(".spd"); if(d) d.insertAdjacentHTML("afterend",'<div class="spok" style="padding:4px 2px;font-size:13px">'+n+'곳을 고쳤습니다. 이어서 확인할 곳이 있습니다 ↓</div>'); return; }
+  $("spW").innerHTML='<h4>✓ 맞춤법·띄어쓰기 검사</h4><div class="spok">'+n+'곳을 고쳤습니다.</div><div class="spbar"><button class="g" onclick="spClose()">닫기</button></div>';
+  setTimeout(()=>{ if($("spDlg").style.display!=="none" && !spState) spClose(); },1400);
+}
+
+// 🌐 부산대(바른한글) 맞춤법 검사기 — 문자를 복사해 두고 새 창으로 엶 (자동 전송 없음: 담당자가 직접 붙여넣기)
+async function openWebSpeller(id,btn){
+  const t=(($(id)||{}).value||"").trim();
+  if(!t){ alert("검사할 문자가 없습니다."); return; }
+  const w=window.open(window.WEB_SPELLER_URL||"https://nara-speller.co.kr/speller/","_blank");
+  let ok=false; try{ await navigator.clipboard.writeText(t); ok=true; }catch(e){}
+  if(!ok){ const el=$(id); try{ el.focus(); el.select(); ok=document.execCommand("copy"); }catch(e){} }
+  if(btn){ const o=btn.textContent; btn.textContent= ok?"복사됨 → Ctrl+V":"복사 실패 — 직접 복사"; setTimeout(()=>{ btn.textContent=o; },2500); }
+  if(!w) alert("팝업이 차단되었습니다. 브라우저 주소창 오른쪽의 팝업 허용을 눌러주세요.");
+}
+// 문자가 바뀔 때마다 버튼에 '고칠 곳 N' 표시 (지휘부 문자·시민 재난문자)
+function spBadge(){ [["jOut","spBtnJ"],["cbsText","spBtnC"]].forEach(([f,b])=>{ const el=$(f), bt=$(b); if(!el||!bt) return;
+  let n=0; try{ n=spellFind(el.value||"").length; }catch(e){}
+  bt.textContent = n ? "⚠ 맞춤법 "+n : "✓ 맞춤법"; bt.style.cssText = (b==="spBtnC"?"margin-left:6px;":"") + (n?"background:#5a3a10!important;color:#ffd27a!important;border-color:#c98a1e!important":""); }); }
+setInterval(()=>{ const a=($("jOut")||{}).value||"", c=($("cbsText")||{}).value||""; if(a+"\u0001"+c!==spBadge._last){ spBadge._last=a+"\u0001"+c; spBadge(); } }, 700);
+
 // ── 패널 전체화면 토글 (지도·상황일지·동원·재난문자·언론보도) ──
 function togglePanelFull(cls, btn){
   const panel=document.querySelector("."+cls); if(!panel) return;
@@ -3427,5 +3560,6 @@ function setSyncBadge(on){
   <div class="lgfoot">한 번 로그인하면 이 PC에서는 로그아웃 전까지 유지됩니다.<br>휴대폰은 로그인 없이 ‘보기 전용’으로 열립니다.</div>
 </div></div>
 <div id="printArea"></div>
+<div id="spDlg" onclick="if(event.target===this)spClose()"><div class="spw" id="spW"></div></div>
 </body>
 </html>

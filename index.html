@@ -139,6 +139,7 @@
   .boardbtns .dbtn{padding:6px 10px;font-size:12.5px;white-space:nowrap}
   /* 맞춤법 검사 */
   .spbtn2{background:#1f3b2c!important;color:#9ff0c4!important;border:1px solid #2f7a52!important}
+  .hsbtn{background:#2c2347!important;color:#d6c4ff!important;border:1px solid #5b4a92!important}
   .spbtn3{background:#14304d!important;color:#a9d4ff!important;border:1px solid #2a567e!important}
   #spDlg{position:fixed;inset:0;z-index:9100;background:rgba(3,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px}
   #spDlg .spw{background:#111d31;border:1px solid #2f7a52;border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.6);color:#dce6f5}
@@ -157,6 +158,38 @@
   #spDlg .spbar button{padding:9px 16px;border-radius:8px;border:1px solid #2f7a52;background:#1f5a3c;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px}
   #spDlg .spbar button.g{background:none;border-color:#33465f;color:#9fb0cc}
   #spDlg .spok{padding:18px 6px;font-size:15px;color:#7ff0b4;font-weight:700}
+  /* 과거 지휘부 문자 사례 */
+  #hsDlg{position:fixed;inset:0;z-index:9050;background:rgba(3,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px}
+  #hsDlg .hsw{background:#111d31;border:1px solid #5b4a92;border-radius:14px;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.6);color:#dce6f5}
+  #hsDlg .hsh{padding:18px 20px 10px;border-bottom:1px solid #213a58}
+  #hsDlg h4{margin:0 0 4px;font-size:18px;color:#fff;display:flex;align-items:center;gap:8px}
+  #hsDlg h4 .x{margin-left:auto;cursor:pointer;color:#7b8da6;font-size:16px}
+  #hsDlg .hsd{font-size:12.5px;color:#9fb0cc;line-height:1.6}
+  #hsDlg .hsf{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  #hsDlg .hsf input,#hsDlg .hsf select{background:#0A1220;border:1px solid #2a3f5c;border-radius:7px;color:#dce6f5;padding:7px 9px;font-size:13.5px;font-family:inherit;outline:none}
+  #hsDlg .hsf input{flex:1;min-width:140px}
+  #hsDlg .hsl{overflow:auto;padding:6px 20px 10px;flex:1}
+  #hsDlg .hsk{margin-top:8px;font-size:12.5px;color:#9fb0cc;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  #hsDlg .hsk span{cursor:pointer;border:1px solid #3a4e6a;border-radius:999px;padding:2px 9px;color:#9fb0cc;font-weight:700}
+  #hsDlg .hsk span.on{background:#1f3b2c;border-color:#2f7a52;color:#9ff0c4}
+  #hsDlg .hsk em{font-style:normal;color:#6f8299;font-size:11.5px}
+  #hsDlg .hsi{border:1px solid #24384f;border-radius:10px;padding:10px 12px;margin:10px 0;background:#0e1829}
+  #hsDlg .hsi.best{border-color:#7a64c9}
+  #hsDlg .hsm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:#8fa3bf;margin-bottom:6px}
+  #hsDlg .hsm .tg{background:#24384f;color:#c9d6e8;border-radius:5px;padding:1px 6px;font-weight:700}
+  #hsDlg .hsm .tg.k{background:#2c2347;color:#d6c4ff} #hsDlg .hsm .tg.s{background:#123a5e;color:#9fd2ff} #hsDlg .hsm .tg.m{background:#1f3b2c;color:#9ff0c4}
+  #hsDlg .hst{white-space:pre-wrap;font-size:14px;line-height:1.6;color:#e8eefa;word-break:break-all}
+  #hsDlg .hst mark{background:rgba(255,210,122,.25);color:#ffe2a6;border-radius:3px;padding:0 1px}
+  #hsDlg .hsb{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+  #hsDlg .hsb button{padding:5px 11px;border-radius:7px;border:1px solid #3a5577;background:#15283f;color:#dce9ff;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px}
+  #hsDlg .hsb button.use{border-color:#7a64c9;background:#2c2347;color:#fff}
+  #hsDlg .hsb button.del{border-color:#5a2a2a;background:none;color:#ff9a9c}
+  #hsDlg .hsfoot{border-top:1px solid #213a58;padding:10px 20px 16px}
+  #hsDlg .hsfoot summary{cursor:pointer;font-size:13px;color:#c9b8ff;font-weight:700}
+  #hsDlg .hsfoot textarea{width:100%;min-height:120px;margin-top:8px;background:#0A1220;border:1px solid #2a3f5c;border-radius:8px;color:#dce6f5;padding:9px;font-size:13px;font-family:inherit;box-sizing:border-box}
+  #hsDlg .hsfoot .row{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  #hsDlg .hsfoot button{padding:7px 14px;border-radius:7px;border:1px solid #7a64c9;background:#2c2347;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px}
+  #hsDlg .hsempty{padding:24px 6px;text-align:center;color:#9fb0cc;font-size:14px;line-height:1.7}
   /* 가져오기 확인·복원 대화상자 */
   #bkDlg{position:fixed;inset:0;z-index:9000;background:rgba(3,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px}
   #bkDlg .bkw{background:#111d31;border:1px solid #2a567e;border-radius:14px;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
@@ -499,7 +532,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.24c</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.24f</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -622,6 +655,7 @@
             <div class="jrow" style="margin-top:8px;margin-bottom:0">
               <span class="cnt" id="jCnt" style="font-size:11.5px;color:var(--dim)"></span>
               <button class="cbtn" id="jSmsBtn" style="margin-left:auto;display:none;background:#2a567e;color:#dce9ff">🖥 문자전송시스템 열기</button>
+              <button class="cbtn hsbtn" onclick="openHistory()" title="비슷한 상황에 과거에 보낸 지휘부 문자를 보여줍니다">📚 과거 사례</button>
               <button class="cbtn spbtn3" onclick="openWebSpeller('jOut',this)" title="문자를 복사하고 부산대(바른한글) 맞춤법 검사기를 새 창으로 엽니다 — 열린 창에 붙여넣기(Ctrl+V) 하세요">🌐 맞춤법 검사</button>
               <button class="cbtn spbtn2" id="spBtnJ" onclick="spellCheck(['jOut'],this)" title="맞춤법·띄어쓰기 검사 (이 PC 안에서만 검사)">✓ 맞춤법</button>
               <button class="cbtn" id="jCopy">문자 복사</button>
@@ -2038,7 +2072,7 @@ $("jStage").addEventListener("change",applyStageAct);
 $("jAiBtn").addEventListener("click",aiPolishJihwi);
 ["jwType","jwLevel","jwMode","jwTime","jwArea"].forEach(id=>$(id).addEventListener("input",renderJihwi));
 ["jwType","jwLevel","jwMode"].forEach(id=>$(id).addEventListener("change",renderJihwi));
-$("jCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("jOut").value);const b=$("jCopy");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="문자 복사";b.classList.remove("ok");},1600);}catch(e){}});
+$("jCopy").addEventListener("click",async()=>{try{ hsRecordCurrent(); }catch(e){} try{await navigator.clipboard.writeText($("jOut").value);const b=$("jCopy");b.textContent="복사 완료";b.classList.add("ok");setTimeout(()=>{b.textContent="문자 복사";b.classList.remove("ok");},1600);}catch(e){}});
 // 문자전송시스템 열기 버튼 (config의 SMS_SYSTEM_URL이 있을 때만 표시)
 (function(){
   var u=window.SMS_SYSTEM_URL||"";
@@ -3017,6 +3051,233 @@ function spApply(){
   setTimeout(()=>{ if($("spDlg").style.display!=="none" && !spState) spClose(); },1400);
 }
 
+// ── 📚 과거 지휘부 문자 사례 ──
+// 저장 위치: 이 PC 브라우저(localStorage 'dh_jhist') — 외부유출 금지 문자가 공개 저장소(GitHub)·공유DB로 나가지 않게 함
+//  · '문자 복사'를 누를 때마다 자동 기록 (훈련 체크 시 제외)
+//  · 예전 문자는 창 아래 '과거 문자 붙여넣어 추가'로 한꺼번에 등록
+const HS_KEY="dh_jhist", HS_MAX=3000;
+// 저장: ① 공유 저장소(Firebase 'jhist' — 로그인한 PC만 읽기·쓰기) ② 이 PC 브라우저(사본·오프라인용)
+//  ※ Firebase 규칙에서 jhist 읽기가 잠겨 있는지 먼저 확인하고, 공개 상태면 올리지 않음
+let hsCache=null, hsFb="unknown";   // hsFb: unknown | checking | ok | public | off
+function hsList(){ if(hsCache) return hsCache; const a=LS.get(HS_KEY,[]); hsCache=Array.isArray(a)?a:[]; return hsCache; }
+function hsSave(a,opt){ opt=opt||{}; hsCache=a.slice(0,HS_MAX); LS.set(HS_KEY,hsCache);
+  if(hsFb==="ok" && !opt.local){ try{
+    if(opt.del){ fbDB.ref("jhist/"+opt.del).remove(); }
+    else { const up={}; (opt.ids? hsCache.filter(x=>opt.ids.indexOf(x.id)>=0) : hsCache).forEach(x=>{ up[x.id]=x; }); if(Object.keys(up).length) fbDB.ref("jhist").update(up); }
+  }catch(e){ console.warn("사례 공유 저장 실패",e); } } }
+async function hsFbCheck(){
+  if(!(typeof fbReady!=="undefined" && fbReady && fbDB && fbUser)){ hsFb="off"; return hsFb; }
+  if(hsFb==="ok"||hsFb==="public") return hsFb;
+  hsFb="checking";
+  try{ // 로그인 없이(REST) 읽어 보기 → 막혀 있어야 안전
+    const url=String((window.FIREBASE_CONFIG||{}).databaseURL||"").replace(/\/$/,"")+"/jhist.json?shallow=true";
+    const r=await fetch(url,{cache:"no-store"});
+    hsFb = (r.status===401||r.status===403) ? "ok" : "public";
+  }catch(e){ hsFb="off"; }
+  if(hsFb==="ok"){
+    const snap=await fbDB.ref("jhist").once("value"); const v=snap.val()||{};
+    const remote=Object.keys(v).map(k=>Object.assign({id:k},v[k]));
+    const seen=new Set(remote.map(x=>hsNorm(x.text)));
+    const localOnly=(LS.get(HS_KEY,[])||[]).filter(x=>x&&x.text&&!seen.has(hsNorm(x.text)));
+    const all=remote.concat(localOnly).sort((p,q)=>(q.at||0)-(p.at||0));
+    hsCache=all.slice(0,HS_MAX); LS.set(HS_KEY,hsCache);
+    if(localOnly.length) hsSave(hsCache,{ids:localOnly.map(x=>x.id)});   // 이 PC에만 있던 사례 → 공유 저장소로
+  }
+  return hsFb;
+}
+function hsNorm(t){ return String(t||"").replace(/\s+/g," ").trim(); }
+function hsClassify(t){
+  const o={kind:"incident", type:"", stage:"", warn:""};
+  if(/Xprotect|재난영상/.test(t)) o.kind="video";
+  else if(/\[기상특보\]|(풍랑|강풍|대설|호우|한파|폭염|건조|태풍|폭풍해일|안개|황사)\s*(주의보|경보|예비특보)/.test(t)){ o.kind="weather"; const m=t.match(/(풍랑|강풍|대설|호우|한파|폭염|건조|태풍|폭풍해일|안개|황사)\s*(주의보|경보|예비특보)/); if(m){ o.type=m[1]; o.warn=m[1]+m[2]; } if(/해제/.test(t)) o.stage="해제"; else o.stage="발표"; }
+  if(o.kind==="incident"){
+    const types=Object.keys((window.JIHWI_INCIDENT||{}).types||{}).filter(x=>x!=="기타");
+    const syn={"화재":/화재|불이|연기|초진|완진|잔불/, "산불":/산불/, "차량화재":/차량\s*화재|차량에서\s*불/, "교통사고":/교통사고|추돌|충돌|전복/, "수난/익수":/익수|악수자|물놀이|수난|물에 빠|해양\s*사고|선박|어선/, "심정지":/심정지|CPR|심폐소생/, "낙상/추락":/낙상|추락/, "승강기 갇힘":/승강기|엘리베이터/, "산악사고":/산악|조난|등산/, "침수":/침수|범람/, "붕괴":/붕괴|무너/, "유해화학물질":/화학|누출|유독/, "벌집 제거":/벌집|벌떼/, "문 개방":/문\s*개방|잠금/};
+    // 차량화재·산불을 일반 화재보다 먼저
+    const order=["산불","차량화재"].concat(types.filter(x=>x!=="산불"&&x!=="차량화재"));
+    for(const k of order){ const re=syn[k]||new RegExp(k.replace(/[\/]/g,"|")); if(re.test(t)){ o.type=k; break; } }
+    if(!o.type){ const ex=[["변사",/변사|사망자\s*발생/],["응급환자",/응급환자|구급상황/],["싱크홀",/싱크홀|땅꺼짐/],["자살소동",/자살/],["폭력사건",/폭력/]].find(([k,re])=>re.test(t)); if(ex) o.type=ex[0]; }
+    const st=t.match(/([1-9])\s*보|종결|상황\s*종료/); if(st) o.stage=st[1]?st[1]+"보":"종결";
+  }
+  return o;
+}
+function hsDateOf(t){
+  let m=String(t).match(/(20\d{2})[.\-/년]\s*(\d{1,2})[.\-/월]\s*(\d{1,2})/); if(m) return m[1]+"."+String(m[2]).padStart(2,"0")+"."+String(m[3]).padStart(2,"0");
+  return "";
+}
+function hsAdd(text,src,extra){
+  text=String(text||"").trim(); if(!text || text.length<8) return false;
+  const a=hsList(), n=hsNorm(text);
+  if(a.some(x=>hsNorm(x.text)===n)) return false;
+  const c=hsClassify(text);
+  const it=Object.assign({id:"h"+Date.now()+Math.floor(Math.random()*1000), at:Date.now(), date:hsDateOf(text), src:src||"", text}, c, extra||{});
+  a.unshift(it); hsSave(a,{ids:[it.id]}); return true;
+}
+// '문자 복사' 누를 때 자동 기록
+function hsRecordCurrent(){
+  if(hsFb==="unknown") hsFbCheck().catch(()=>{});
+  if($("training") && $("training").checked) return;
+  if(typeof trainState!=="undefined" && trainState) return;
+  const t=($("jOut").value||"").trim(); if(!t) return;
+  const ex={};
+  if(jKind==="incident"){ ex.type=$("jType").value; ex.stage=$("jStage").value; }
+  else if(jKind==="weather"){ ex.type=$("jwType").value; ex.warn=$("jwType").value+$("jwLevel").value; ex.stage=$("jwMode").value==="release"?"해제":"발표"; }
+  ex.kind=jKind;
+  const d=new Date(); ex.date=d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0");
+  hsAdd(t,"발송",ex);
+}
+let hsState={q:"",f:"same"};
+function hsClose(){ $("hsDlg").style.display="none"; }
+function hsCurrent(){
+  if(jKind==="weather") return {kind:"weather", type:$("jwType").value, label:"기상특보 · "+$("jwType").value+$("jwLevel").value};
+  if(jKind==="video") return {kind:"video", type:"", label:"재난영상 송출"};
+  return {kind:"incident", type:$("jType").value, stage:$("jStage").value, label:"상황 발생보고 · "+$("jType").value+" · "+$("jStage").value};
+}
+// 상황 키워드 — 지금 상황(신고 메시지·상황개요·작성 중 문자)에서 찾아 비슷한 상황의 과거 문자를 위로
+const HS_SIT=[
+  ["아파트",/아파트/],["주택",/주택|빌라|원룸|다세대|가정집/],["상가·식당",/상가|식당|음식점|점포|가게/],["주방·조리",/주방|조리|음식물|냄비|가스레인지|가스렌지/],["창고",/창고/],["공장·사업장",/공장|사업장|작업장|공단/],
+  ["숙박·펜션",/펜션|민박|모텔|숙박|호텔/],["학교",/학교|초교|중학교|고등학교/],["병원·요양",/병원|요양/],["시장",/시장/],["비닐하우스·축사",/비닐하우스|축사|하우스/],
+  ["컨테이너·가설",/컨테이너|가설|포장마차|간이/],["쓰레기·소각",/쓰레기|소각|폐기물/],["풀·건초·밭",/건초|풀|밭|논두렁|잡목|덤불/],["야산·임야",/야산|임야|산림|산\s*\d|뒷산/],
+  ["전기·배선",/전기|배선|누전|분전|콘센트|전선/],["가스·보일러",/가스|보일러|난로|LPG/],["연기",/연기/],["폭발",/폭발/],
+  ["차량",/차량|승용차|SUV|자동차/],["화물·덤프",/덤프|트레일러|BCT|화물|트럭|탱크로리|레미콘/],["버스·택시",/버스|택시/],["오토바이·자전거",/오토바이|이륜|자전거|킥보드/],
+  ["보행자",/보행자|횡단보도|사람을|행인/],["추돌·충돌",/추돌|충돌/],["단독사고",/단독/],["전복",/전복/],["음주",/음주/],["결빙",/블랙아이스|결빙|빙판/],
+  ["터널·교량",/터널|교량|다리|교각/],["국도·고속도로",/국도|고속도로|7번|42번/],
+  ["심정지·CPR",/심정지|CPR|심폐소생/],["사망",/사망|변사/],["부상",/부상|중상|경상|출혈|골절/],["이송",/이송|헬기/],["고립·갇힘",/고립|갇힘|갇혀/],
+  ["해변·방파제",/해수욕장|해변|방파제|갯바위|항구|항내|해안/],["낚시",/낚시/],["선박·어선",/선박|어선|보트/],["추락·낙상",/추락|낙상/],
+];
+function hsSitKeys(t){ t=String(t||""); return HS_SIT.filter(([k,re])=>re.test(t)).map(([k])=>k); }
+function hsContext(){ return [($("raw")||{}).value,($("jSit")||{}).value,($("jOut")||{}).value,($("f_gaeyo")||{}).value,($("f_title")||{}).value].filter(Boolean).join("\n"); }
+function openHistory(){
+  const cur=hsCurrent();
+  const keys=cur.kind==="incident" ? hsSitKeys(hsContext()) : [];
+  hsState={q:"", f:"same", keys, on:keys.slice()};
+  hsRender(cur);
+  $("hsDlg").style.display="flex";
+  if(hsFb==="unknown"||hsFb==="off"){ hsFbCheck().then(()=>{ if($("hsDlg").style.display!=="none") hsRender(); }).catch(()=>{}); }
+}
+function hsScore(x,cur,q){
+  let s=0;
+  if(x.kind===cur.kind) s+=10;
+  if(cur.type && x.type===cur.type) s+=20;
+  (hsState.on||[]).forEach(k=>{ const g=HS_SIT.find(z=>z[0]===k); if(g && g[1].test(x.text)) s+=12; });   // 비슷한 상황일수록 위로
+  if(cur.stage && x.stage===cur.stage) s+=3;
+  if(q){ q.split(/\s+/).filter(Boolean).forEach(w=>{ if(x.text.indexOf(w)>=0) s+=8; }); }
+  return s;
+}
+function hsRender(cur){
+  cur=cur||hsCurrent();
+  const q=(hsState.q||"").trim(), f=hsState.f;
+  let a=hsList();
+  const total=a.length;
+  if(f==="same") a=a.filter(x=>x.kind===cur.kind && (!cur.type || x.type===cur.type));
+  else if(f==="kind") a=a.filter(x=>x.kind===cur.kind);
+  if(q) a=a.filter(x=>q.split(/\s+/).filter(Boolean).every(w=>x.text.indexOf(w)>=0));
+  a=a.map(x=>({x,sc:hsScore(x,cur,q)})).sort((p,r)=>r.sc-p.sc || (r.x.at||0)-(p.x.at||0)).map(o=>o.x);
+  const mark=t=>{ let h=escapeHtml(t); if(q){ q.split(/\s+/).filter(Boolean).forEach(w=>{ const e=escapeHtml(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); h=h.replace(new RegExp(e,"g"),m=>"<mark>"+m+"</mark>"); }); } return h; };
+  const kname={incident:"상황보고",weather:"기상특보",video:"영상송출"};
+  let h='<div class="hsh"><h4>📚 과거 지휘부 문자 사례 <span class="x" onclick="hsClose()">✕</span></h4>'+
+    '<div class="hsd">지금 작성 중: <b style="color:#d6c4ff">'+escapeHtml(cur.label)+'</b> — 비슷한 사례를 먼저 보여줍니다. (저장된 사례 '+total+'건)</div>'+
+    '<div class="hsf"><select onchange="hsState.f=this.value;hsRender()">'+
+      [["same","같은 유형만"],["kind","같은 종류 전체"],["all","전체"]].map(([v,t])=>'<option value="'+v+'"'+(f===v?' selected':'')+'>'+t+'</option>').join("")+'</select>'+
+      '<input id="hsQ" placeholder="검색어 (예: 주방, 전복, 종결)" value="'+escapeHtml(q)+'" oninput="hsState.q=this.value;clearTimeout(hsRender._t);hsRender._t=setTimeout(()=>{hsRender();const e=document.getElementById(\'hsQ\');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},250)">'+
+    '</div>'+
+    ((hsState.keys||[]).length?'<div class="hsk">🔎 지금 상황: '+hsState.keys.map(k=>'<span class="'+((hsState.on||[]).indexOf(k)>=0?'on':'')+'" onclick="hsToggleKey(\''+k+'\')">'+escapeHtml(k)+'</span>').join("")+'<em>— 눌러서 켜고 끄기</em></div>'
+      : (cur.kind==="incident"?'<div class="hsk"><em>신고 메시지·상황개요를 넣으면 비슷한 상황(아파트·창고·보행자 등)을 먼저 찾아줍니다</em></div>':''))+
+    '<div class="hsd" style="margin-top:6px">'+({ok:"☁ 공유 저장소 — 로그인한 모든 PC에서 같은 사례가 보입니다",public:"⚠ Firebase 규칙이 아직 공개 상태라 공유 저장소에 올리지 않았습니다 (이 PC에만 저장 중)",checking:"공유 저장소 확인 중…",off:"💻 이 PC에만 저장 중 (로그인·공유 연결 시 공유 저장소로 자동 이동)",unknown:""}[hsFb]||"")+'</div>'+
+    '</div><div class="hsl">';
+  if(!total) h+='<div class="hsempty">아직 저장된 사례가 없습니다.<br>· 앞으로 <b>‘문자 복사’</b>를 누르면 자동으로 쌓입니다.<br>· 예전에 보낸 문자는 아래 <b>‘과거 문자 붙여넣어 추가’</b>로 한꺼번에 넣을 수 있습니다.</div>';
+  else if(!a.length) h+='<div class="hsempty">조건에 맞는 사례가 없습니다.'+(f!=="all"?'<br><a href="#" style="color:#c9b8ff" onclick="hsState.f=\'all\';hsRender();return false">전체에서 찾기</a>':'')+'</div>';
+  a.slice(0,40).forEach((x,i)=>{
+    h+='<div class="hsi'+(i===0&&f!=="all"?' best':'')+'"><div class="hsm">'+(x.date?'<span>'+escapeHtml(x.date)+'</span>':'')+
+      '<span class="tg k">'+escapeHtml(kname[x.kind]||"")+'</span>'+(x.type?'<span class="tg">'+escapeHtml(x.warn||x.type)+'</span>':'')+(x.stage?'<span class="tg s">'+escapeHtml(x.stage)+'</span>':'')+
+      (x.src==="발송"?'<span class="tg m">이 상황판에서 발송</span>':'')+
+      (hsState.on||[]).filter(k=>{ const g=HS_SIT.find(z=>z[0]===k); return g&&g[1].test(x.text); }).map(k=>'<span class="tg m">≈ '+escapeHtml(k)+'</span>').join("")+'</div>'+
+      '<div class="hst">'+mark(x.text)+'</div>'+
+      '<div class="hsb"><button class="del" onclick="hsDel(\''+x.id+'\')">삭제</button><button onclick="hsCopy(\''+x.id+'\',this)">복사</button><button class="use" onclick="hsUse(\''+x.id+'\')">이 문안 가져오기</button></div></div>';
+  });
+  h+='</div><div class="hsfoot"><div class="row" style="margin:0 0 8px"><button onclick="document.getElementById(\'hsFile\').click()">📂 파일에서 가져오기</button><span class="hsd">문자발송 시스템의 <b>전송결과 엑셀(.xlsx)</b> 또는 정리된 사례 파일(.json)</span><input type="file" id="hsFile" accept=".xlsx,.json,.txt" style="display:none" onchange="hsImportFile(this.files[0]);this.value=\'\'"></div>'+
+    '<details><summary>＋ 과거 문자 붙여넣어 추가 (여러 건 한꺼번에)</summary>'+
+    '<textarea id="hsImp" placeholder="예전에 보낸 지휘부 문자를 그대로 붙여넣으세요.\n문자 끝의 [동해시재난안전상황실] 또는 빈 줄을 기준으로 한 건씩 나눕니다."></textarea>'+
+    '<div class="row"><button onclick="hsImport()">추가하기</button><span class="hsd">유형(화재·교통사고·기상특보 등)과 1보·2보는 내용을 보고 자동 분류합니다.</span></div></details></div>';
+  $("hsW").innerHTML=h;
+}
+function hsToggleKey(k){ const on=hsState.on||[]; const i=on.indexOf(k); if(i>=0) on.splice(i,1); else on.push(k); hsState.on=on; hsRender(); }
+async function hsImport(){
+  await hsFbCheck();
+  const raw=($("hsImp").value||"").replace(/\r/g,""); if(!raw.trim()) return;
+  const tail=(window.JIHWI_TAIL||"[동해시재난안전상황실]").replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  let parts=raw.split(new RegExp("(?<="+tail+")","g"));
+  if(parts.length<=1) parts=raw.split(/\n\s*\n+/);
+  let n=0,d=0; parts.map(x=>x.trim()).filter(Boolean).forEach(t=>{ if(hsAdd(t,"등록")) n++; else d++; });
+  alert(n+"건 추가했습니다."+(d?" (이미 있거나 너무 짧은 "+d+"건 제외)":""));
+  hsState.f="all"; hsRender();
+}
+// 파일에서 가져오기 — ① 문자발송 '전송결과' 엑셀(수신자 이름·번호는 읽지 않고 문자 내용·발송시각·메시지명칭만) ② 사례 JSON
+async function hsImportFile(file){
+  if(!file) return;
+  let items=[];
+  try{
+    if(/\.xlsx$/i.test(file.name)){
+      const rows=await xlsxRows(file);
+      const hi=rows.findIndex(r=>r.some(c=>/메시지/.test(c||"")));
+      if(hi<0) throw new Error("‘메시지’ 열을 찾지 못했습니다");
+      const H=rows[hi].map(x=>String(x||"").trim());
+      const col=(...ns)=>{ for(const n of ns){ const i=H.indexOf(n); if(i>=0) return i; } return -1; };
+      let mi=[col("문자-메시지"),col("카카오-메시지"),col("RCS-메시지")].filter(i=>i>=0);
+      if(!mi.length) mi=[H.findIndex(h=>/메시지|내용/.test(h)&&!/명칭|결과/.test(h))].filter(i=>i>=0);
+      const di=col("1차요청일시","최종결과수신일시","요청일시","전송일시","발송일시"), ni=col("메시지명칭","제목");
+      rows.slice(hi+1).forEach(r=>{ let t=""; for(const i of mi){ if(r[i]){ t=r[i]; break; } } if(!t) return;
+        items.push({text:String(t).replace(/\r\n?/g,"\n").trim(), date:di>=0?String(r[di]||""):"", name:ni>=0?String(r[ni]||""):""}); });
+    } else {
+      const txt=await file.text();
+      if(/^\s*[\[{]/.test(txt)){ const j=JSON.parse(txt); items=(Array.isArray(j)?j:(j.items||[])).map(x=>({text:String(x.text||""), date:String(x.date||x.dt||""), name:String(x.name||x.title||"")})); }
+      else { $("hsImp").value=txt; return hsImport(); }
+    }
+  }catch(e){ alert("파일을 읽지 못했습니다: "+(e.message||e)); return; }
+  await hsFbCheck();
+  let n=0,d=0; const newIds=[];
+  items.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const a=hsList(), seen=new Set(a.map(x=>hsNorm(x.text)));
+  items.forEach(it=>{ const t=it.text.trim(); const k=hsNorm(t); if(t.length<8 || seen.has(k)){ d++; return; } seen.add(k);
+    const c=hsClassify((it.name||"")+"\n"+t);
+    const m=String(it.date).match(/(20\d{2})[-./](\d{1,2})[-./](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
+    const date=m? m[1]+"."+m[2].padStart(2,"0")+"."+m[3].padStart(2,"0")+(m[4]?" "+m[4].padStart(2,"0")+":"+m[5]:"") : hsDateOf(t);
+    const at=m? new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)).getTime() : Date.now();
+    const nw=Object.assign({id:"h"+at+Math.floor(Math.random()*100000), at, date, src:"발송내역", title:it.name||"", text:t}, c); a.push(nw); newIds.push(nw.id); n++; });
+  a.sort((p,q)=>(q.at||0)-(p.at||0));
+  hsSave(a,{ids:newIds});
+  alert(n+"건을 가져왔습니다."+(d?" (중복·빈 문자 "+d+"건 제외)":"")+"\n"+(hsFb==="ok"?"공유 저장소에 저장되어 로그인한 모든 PC에서 보입니다.":"이 PC에만 저장됩니다."));
+  hsState.f="same"; hsRender();
+}
+// 최소 xlsx 읽기 (외부 라이브러리 없이) — 첫 번째 시트의 셀 텍스트를 행 배열로
+async function xlsxRows(file){
+  const buf=new Uint8Array(await file.arrayBuffer()), dv=new DataView(buf.buffer);
+  let e=buf.length-22; while(e>=0 && dv.getUint32(e,true)!==0x06054b50) e--; if(e<0) throw new Error("xlsx 형식이 아닙니다");
+  const cnt=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const files={};
+  for(let i=0;i<cnt;i++){ const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), nlen=dv.getUint16(p+28,true), xlen=dv.getUint16(p+30,true), clen=dv.getUint16(p+32,true), off=dv.getUint32(p+42,true);
+    const name=new TextDecoder().decode(buf.subarray(p+46,p+46+nlen)); files[name]={method,csize,off}; p+=46+nlen+xlen+clen; }
+  const read=async(name)=>{ const f=files[name]; if(!f) return ""; const lo=f.off, ds=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true); const data=buf.subarray(ds,ds+f.csize);
+    if(f.method===0) return new TextDecoder().decode(data);
+    return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text(); };
+  const P=new DOMParser();
+  const ss=[]; const sx=await read("xl/sharedStrings.xml"); if(sx){ const d=P.parseFromString(sx,"application/xml"); [...d.getElementsByTagName("si")].forEach(si=>ss.push([...si.getElementsByTagName("t")].map(t=>t.textContent).join(""))); }
+  const sheet=Object.keys(files).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort((a,b)=>parseInt(a.match(/\d+/)[0])-parseInt(b.match(/\d+/)[0]))[0];
+  const d=P.parseFromString(await read(sheet),"application/xml");
+  const colIdx=r=>{ const m=String(r||"").match(/^([A-Z]+)/); if(!m) return -1; let n=0; for(const ch of m[1]) n=n*26+(ch.charCodeAt(0)-64); return n-1; };
+  return [...d.getElementsByTagName("row")].map(row=>{ const out=[]; let k=0;
+    [...row.getElementsByTagName("c")].forEach(c=>{ const i=c.getAttribute("r")?colIdx(c.getAttribute("r")):k; k=i+1; const t=c.getAttribute("t");
+      let v=""; if(t==="inlineStr"){ v=[...c.getElementsByTagName("t")].map(x=>x.textContent).join(""); } else { const ve=c.getElementsByTagName("v")[0]; v=ve?ve.textContent:""; if(t==="s") v=ss[+v]||""; }
+      out[i]=v; }); return out; });
+}
+function hsFind(id){ return hsList().find(x=>x.id===id); }
+async function hsCopy(id,btn){ const x=hsFind(id); if(!x) return; try{ await navigator.clipboard.writeText(x.text); btn.textContent="복사됨"; setTimeout(()=>btn.textContent="복사",1400);}catch(e){} }
+function hsUse(id){ const x=hsFind(id); if(!x) return;
+  if(($("jOut").value||"").trim() && !confirm("지금 작성된 지휘부 문자를 이 과거 문안으로 바꿀까요?\n(날짜·장소·인원 등은 이번 상황에 맞게 꼭 고치세요)")) return;
+  $("jOut").value=x.text; $("jOut").dispatchEvent(new Event("input",{bubbles:true}));
+  if($("jCnt")) $("jCnt").textContent=`${[...x.text].length}자 · 약 ${byteLen(x.text)}바이트`;
+  hsClose(); $("jOut").focus(); }
+function hsDel(id){ if(!confirm("이 사례를 지울까요?"+(hsFb==="ok"?" (공유 저장소에서 삭제 — 모든 PC)":" (이 PC에서 삭제)"))) return; hsSave(hsList().filter(x=>x.id!==id),{del:id}); hsRender(); }
+
 // 🌐 부산대(바른한글) 맞춤법 검사기 — 문자를 복사해 두고 새 창으로 엶 (자동 전송 없음: 담당자가 직접 붙여넣기)
 async function openWebSpeller(id,btn){
   const t=(($(id)||{}).value||"").trim();
@@ -3561,5 +3822,6 @@ function setSyncBadge(on){
 </div></div>
 <div id="printArea"></div>
 <div id="spDlg" onclick="if(event.target===this)spClose()"><div class="spw" id="spW"></div></div>
+<div id="hsDlg" onclick="if(event.target===this)hsClose()"><div class="hsw" id="hsW"></div></div>
 </body>
 </html>

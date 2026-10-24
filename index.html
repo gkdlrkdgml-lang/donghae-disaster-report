@@ -532,7 +532,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.24f</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.24g</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -3115,7 +3115,7 @@ function hsAdd(text,src,extra){
 }
 // '문자 복사' 누를 때 자동 기록
 function hsRecordCurrent(){
-  if(hsFb==="unknown") hsFbCheck().catch(()=>{});
+  if(hsFb==="unknown"||hsFb==="off") hsFbCheck().catch(()=>{});   // 공유 저장소 연결이 늦었으면 다시 시도(이 PC에만 있던 사례도 함께 올림)
   if($("training") && $("training").checked) return;
   if(typeof trainState!=="undefined" && trainState) return;
   const t=($("jOut").value||"").trim(); if(!t) return;

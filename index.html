@@ -532,7 +532,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.27a</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.27c</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -3563,28 +3563,45 @@ async function fetchDisasterMsg(){
     let rows;
     if(region==="동해"){
       // 동해시: ① 수신지역에 '동해'가 있는 문자 + ② 강원도 전체 발송 문자 + ③ 강원 문자 중 본문에 '동해시'가 있는 것
-      const rs=await Promise.allSettled([getRows("동해"), getRows("강원")]);
+      const rs=await Promise.allSettled([getRows("동해"), getRows("강원"), getRows("")]);   // ③ 전국 최신 문자(행안부 전국 발송 등)
       const ok=rs.filter(r=>r.status==="fulfilled");
       if(!ok.length) throw rs[0].reason;
       const seen=new Set(); rows=[];
       ok.forEach(r=>r.value.forEach(x=>{ const k=(x.when||"")+"|"+(x.msg||"").slice(0,60); if(seen.has(k)) return; seen.add(k); rows.push(x); }));
       rows=rows.filter(r=>dmForDonghae(r));
-      rows.sort((a,b)=>String(b.when||"").localeCompare(String(a.when||"")));
+      rows=dmKeep(rows);   // 한 번 받은 동해시 해당 문자는 24시간 동안 계속 표시
+      rows.sort((a,b)=>dmTs(b)-dmTs(a));
     } else {
       rows=await getRows(region);
       if(region) rows=rows.filter(r=>(r.region||"").includes(region));
     }
-    renderDm(rows.slice(0,20));
+    renderDm(rows.slice(0,region==="동해"?40:20));
     $("dmTime").textContent=nowHM()+" 기준"+(proxy?" · 중계":"");
     return;
   }catch(e){ lastErr=(e&&e.message)||String(e||""); }
   box.innerHTML=`<div class="logempty">재난문자를 불러오지 못했습니다.<br><span style="color:#ff9a9c">사유: ${escapeHtml(lastErr||"알 수 없음")}</span><br><br>`+
     `<a href="https://www.safekorea.go.kr/idsiSFK/neo/sfk/cs/sfc/dis/disasterMsgList.jsp" target="_blank" style="color:var(--cyan);font-weight:700">국민재난안전포털에서 보기 ↗</a></div>`;
 }
-// 동해시 주민이 받는 문자인지 — 수신지역 '동해' / 강원도 전체 / 본문에 '동해시'
+// 문자 시각 → 숫자(ms). '2026/10/27 18:00:00', '20261027180000' 등
+function dmTs(r){ const d=String((r&&r.when)||"").replace(/\D/g,""); if(d.length<12) return +(r&&r.seenAt)||0;
+  return new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6,8),+d.slice(8,10),+d.slice(10,12),+(d.slice(12,14)||0)).getTime(); }
+// 받아온 문자를 이 PC에 24시간 보관 → 전국·강원 문자가 목록에서 금방 밀려나도 하루 동안 계속 보이게
+function dmKeep(rows){
+  const KEY="dh_dm_keep", DAY=86400000, now=Date.now();
+  let keep=[]; try{ keep=LS.get(KEY,[])||[]; }catch(e){}
+  const key=r=>String(r.when||"")+"|"+String(r.msg||"").replace(/\s+/g,"").slice(0,60);
+  const map=new Map();
+  keep.forEach(r=>{ if(r && r.msg) map.set(key(r),r); });
+  rows.forEach(r=>{ const k=key(r); if(!map.has(k)) map.set(k,Object.assign({},r,{seenAt:now})); });
+  const out=[...map.values()].filter(r=>{ const t=dmTs(r)||r.seenAt||0; return now-t < DAY; });
+  try{ LS.set(KEY,out.slice(0,200)); }catch(e){}
+  return out;
+}
+// 동해시 주민이 받는 문자인지 — 수신지역 '동해' / 강원도 전체 / 전국 / 본문에 '동해시'
 function dmForDonghae(r){
   const rg=String(r.region||""), msg=String(r.msg||"");
   if(rg.includes("동해")) return true;
+  if(/전국/.test(rg)) return true;
   if(/강원(특별자치)?도\s*전체/.test(rg) || /^\s*강원(특별자치)?도\s*$/.test(rg) || /(^|,)\s*강원(특별자치)?도\s*(,|$)/.test(rg)) return true;
   if(/동해시/.test(msg)) return true;
   return false;

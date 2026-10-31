@@ -532,7 +532,7 @@
     <button id="navReport" class="on" onclick="showPage('report')">📄 보고서 생성</button>
     <button id="navDash" onclick="showPage('dash')">🖥 재난상황판</button>
     <span id="viewOnlyTag" style="margin-left:auto">👁 보기 전용</span>
-    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.27c</span>
+    <span class="badge" id="buildStamp" title="현재 로드된 버전. 최신이 아니면 Ctrl+Shift+R로 강력 새로고침" style="margin-left:8px;align-self:center;background:#1c3a24;color:#8fe0a6">v2026.10.31a</span>
     <button id="logoutBtn" onclick="fbLogout()" title="이 PC에서 로그아웃">🔒 로그아웃</button>
   </div>
 
@@ -887,8 +887,9 @@
   if(!key || key.indexOf("여기에")>=0){ window.__kakaoReady=false; return; }
   var s=document.createElement("script");
   s.src="https://dapi.kakao.com/v2/maps/sdk.js?appkey="+key+"&libraries=services&autoload=false";
-  s.onload=function(){ if(window.kakao&&kakao.maps) kakao.maps.load(function(){ window.__kakaoReady=true; }); };
-  s.onerror=function(){ window.__kakaoReady=false; };
+  // 지도 SDK가 늦게 오면(모바일 등) 준비되는 순간 기다리던 지도 표시를 이어서 실행
+  s.onload=function(){ if(window.kakao&&kakao.maps) kakao.maps.load(function(){ window.__kakaoReady=true; var cb=window.__kakaoReadyCb; window.__kakaoReadyCb=null; if(cb) try{ cb(); }catch(e){} }); };
+  s.onerror=function(){ window.__kakaoReady=false; window.__kakaoFailed=true; var cb=window.__kakaoReadyCb; window.__kakaoReadyCb=null; if(cb) try{ cb(); }catch(e){} };
   document.head.appendChild(s);
 })();
 </script>
@@ -2261,8 +2262,17 @@ async function dashWeather(lat,lng,silent){
 function dashMapShow(){
   const q=($("dsPlace").value||"").trim();
   if(!q){ if(!dashMap) dashMsg("발생장소를 입력하고 '위치 표시'를 누르거나,<br>'보고서에서 가져오기'를 하면 지도에 표시됩니다."); return; }
-  dashMapLastQuery=q;   // 중복 지오코딩 방지
-  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){ dashMsg("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); return; }
+  if(!window.__kakaoReady||!window.kakao||!kakao.maps||!kakao.maps.services){
+    // 지도 SDK가 아직 오는 중이면 기다렸다가 다시 표시 (모바일에서 첫 화면에 지도가 안 뜨던 문제)
+    if(!window.__kakaoFailed && window.KAKAO_JS_KEY){
+      if(!dashMap) dashMsg("지도를 불러오는 중…");
+      window.__kakaoReadyCb=()=>dashMapShow();
+      clearTimeout(dashMapShow._t); dashMapShow._t=setTimeout(()=>{ if(!window.__kakaoReady){ window.__kakaoReadyCb=null; dashMsg("지도를 불러오지 못했습니다(인터넷 연결 확인).<br>잠시 후 화면을 새로고침해 주세요."); } },20000);
+      return;
+    }
+    dashMsg("지도를 사용할 수 없습니다(인터넷·카카오 키 확인)."); return;
+  }
+  dashMapLastQuery=q;   // 중복 지오코딩 방지 (지도가 실제로 준비된 뒤에만 기록)
   geocodeDonghae(q,
     (lat,lng)=>dashMapCoords(lat,lng,q),
     ()=>dashMsg("지도에서 위치를 찾지 못했습니다. 장소를 확인하세요."));
@@ -3538,9 +3548,9 @@ async function fetchDisasterMsg(){
   }
   box.innerHTML='<div class="logempty">재난문자를 불러오는 중…</div>';
   // 한 지역 조회 — 우선순위: ① 중계(앱스스크립트) → ② 직접주소(고급) → ③ 기본 후보
-  const getRows=async(rg)=>{
+  const getRows=async(rg,extra)=>{
     let cands;
-    if(proxy){ cands=[ proxy + (proxy.indexOf("?")>=0?"&":"?") + "region=" + encodeURIComponent(rg) ]; }
+    if(proxy){ cands=[ proxy + (proxy.indexOf("?")>=0?"&":"?") + "region=" + encodeURIComponent(rg) + (extra||"") ]; }
     else if(window.DISASTER_MSG_URL){ cands=[window.DISASTER_MSG_URL]; }
     else { cands=[
       `https://www.safetydata.go.kr/V2/api/DSSP-IF-00247?serviceKey=${key}&pageNo=1&numOfRows=30&returnType=json${rg?`&rgnNm=${encodeURIComponent(rg)}`:""}`,
@@ -3563,7 +3573,8 @@ async function fetchDisasterMsg(){
     let rows;
     if(region==="동해"){
       // 동해시: ① 수신지역에 '동해'가 있는 문자 + ② 강원도 전체 발송 문자 + ③ 강원 문자 중 본문에 '동해시'가 있는 것
-      const rs=await Promise.allSettled([getRows("동해"), getRows("강원"), getRows("")]);   // ③ 전국 최신 문자(행안부 전국 발송 등)
+      // ③ 전국 최근 300건 중 동해시 해당분(중계 스크립트가 골라 줌 · 구버전 중계면 전국 최신 30건)
+      const rs=await Promise.allSettled([getRows("동해"), getRows("강원"), getRows("","&dh=1&rows=300")]);
       const ok=rs.filter(r=>r.status==="fulfilled");
       if(!ok.length) throw rs[0].reason;
       const seen=new Set(); rows=[];
